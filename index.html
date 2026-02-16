@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Material Coverage Calculator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Material Coverage Calculator</h1>
+        <p>Estimate coatings and packaging based on your project area and selected system.</p>
+      </header>
+
+      <section class="card form-grid" aria-label="Project Inputs">
+        <h2>Project Inputs</h2>
+
+        <label>
+          Project Type
+          <select id="projectType"></select>
+        </label>
+
+        <label>
+          Measurement Mode
+          <select id="measurementMode">
+            <option value="area">Total Area</option>
+            <option value="dimensions">Width × Length</option>
+          </select>
+        </label>
+
+        <div id="areaInputs" class="inline-inputs">
+          <label>
+            Area
+            <input id="areaValue" type="number" min="0" step="0.1" value="3200" />
+          </label>
+          <label>
+            Unit
+            <select id="areaUnit">
+              <option value="sqft">Square Feet</option>
+              <option value="sqyd">Square Yards</option>
+              <option value="sqm">Square Meters</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="dimensionInputs" class="inline-inputs hidden">
+          <label>
+            Width
+            <input id="widthValue" type="number" min="0" step="0.1" value="50" />
+          </label>
+          <label>
+            Length
+            <input id="lengthValue" type="number" min="0" step="0.1" value="64" />
+          </label>
+          <label>
+            Unit
+            <select id="dimensionUnit">
+              <option value="ft">Feet</option>
+              <option value="yd">Yards</option>
+              <option value="m">Meters</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Number of Coats
+          <input id="coats" type="number" min="1" step="1" value="2" />
+        </label>
+
+        <label>
+          Packaging
+          <select id="packagingType">
+            <option value="55">55 Gallon Drums</option>
+            <option value="5">5 Gallon Pails</option>
+            <option value="1">1 Gallon Pails</option>
+          </select>
+        </label>
+
+        <label>
+          Mix Type
+          <select id="mixType">
+            <option value="concentrate">Concentrate (add sand/water onsite)</option>
+            <option value="ready">Ready Mix (factory blended)</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="card" aria-label="Calculation Summary">
+        <h2>Summary</h2>
+        <div id="summary" class="summary-grid"></div>
+      </section>
+
+      <section class="card" aria-label="Material Recommendations">
+        <h2>Recommended Materials</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Coats</th>
+              <th>Coverage (sq ft/gal/coat)</th>
+              <th>Gallons Needed</th>
+              <th>Packaging Needed</th>
+              <th>Item Number</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </section>
+
+      <section class="card" aria-label="Crack Filler Guidance">
+        <h2>Crack Filler Guidance</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Linear Feet / Gallon</th>
+              <th>Recommended Width</th>
+              <th>Disclaimer</th>
+            </tr>
+          </thead>
+          <tbody id="crackBody"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
