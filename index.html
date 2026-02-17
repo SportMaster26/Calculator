@@ -3,123 +3,164 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Material Coverage Calculator</title>
+    <title>SportMaster Product Calculator</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="container">
       <header>
-        <h1>Material Coverage Calculator</h1>
-        <p>Estimate coatings and packaging based on your project area and selected system.</p>
+        <h1>SportMaster Product Calculator</h1>
+        <p id="noteText"></p>
       </header>
 
-      <section class="card form-grid" aria-label="Project Inputs">
-        <h2>Project Inputs</h2>
-
-        <label>
-          Project Type
-          <select id="projectType"></select>
-        </label>
-
-        <label>
-          Measurement Mode
-          <select id="measurementMode">
-            <option value="area">Total Area</option>
-            <option value="dimensions">Width × Length</option>
-          </select>
-        </label>
-
-        <div id="areaInputs" class="inline-inputs">
+      <!-- ─── Step 1: Dimensions ─── -->
+      <section class="card" aria-label="Court Dimensions">
+        <h2>Step 1: Court Dimensions</h2>
+        <p class="step-hint">Select how you want to enter your court size, then fill in the yellow boxes.</p>
+        <div class="form-row">
           <label>
-            Area
-            <input id="areaValue" type="number" min="0" step="0.1" value="3200" />
-          </label>
-          <label>
-            Unit
-            <select id="areaUnit">
-              <option value="sqft">Square Feet</option>
-              <option value="sqyd">Square Yards</option>
+            <span>Input Mode</span>
+            <select id="inputMode">
+              <option value="widthLength">Width x Length (Feet)</option>
+              <option value="sqft">Square Footage</option>
+              <option value="sqyd">Square Yardage</option>
               <option value="sqm">Square Meters</option>
             </select>
           </label>
+          <label>
+            <span id="value1Label">Width (Feet)</span>
+            <input id="value1" type="number" min="0" step="0.1" value="36" class="input-highlight" />
+          </label>
+          <label id="value2Row">
+            <span>Length (Feet)</span>
+            <input id="value2" type="number" min="0" step="0.1" value="78" class="input-highlight" />
+          </label>
         </div>
+      </section>
 
-        <div id="dimensionInputs" class="inline-inputs hidden">
+      <!-- ─── Step 2: Court Type ─── -->
+      <section class="card" aria-label="Court Selection">
+        <h2>Step 2: Court Type</h2>
+        <div class="form-row">
           <label>
-            Width
-            <input id="widthValue" type="number" min="0" step="0.1" value="50" />
+            <span>Select Court</span>
+            <select id="courtType"></select>
+          </label>
+          <label id="courtsRow">
+            <span>Number of Courts</span>
+            <input id="numCourts" type="number" min="1" step="1" value="1" class="input-highlight" />
+          </label>
+        </div>
+      </section>
+
+      <!-- ─── Step 3: Surface & Packaging ─── -->
+      <section class="card" aria-label="Surface and Packaging">
+        <h2>Step 3: Surface, Packaging & Mix</h2>
+        <div class="form-row">
+          <label>
+            <span>Surface / Base Type</span>
+            <select id="surfaceType">
+              <option value="concrete">New Concrete</option>
+              <option value="asphalt">New Asphalt</option>
+              <option value="existingConcrete">Existing Concrete</option>
+              <option value="existingAsphalt">Existing Asphalt</option>
+            </select>
           </label>
           <label>
-            Length
-            <input id="lengthValue" type="number" min="0" step="0.1" value="64" />
+            <span>Packaging</span>
+            <select id="packaging">
+              <option value="55">55 Gallon Drums</option>
+              <option value="30">30 Gallon Kegs</option>
+              <option value="5">5 Gallon Pails</option>
+            </select>
           </label>
           <label>
-            Unit
-            <select id="dimensionUnit">
-              <option value="ft">Feet</option>
-              <option value="yd">Yards</option>
-              <option value="m">Meters</option>
+            <span>Mix Type</span>
+            <select id="mixType">
+              <option value="ready">Ready-to-Use (pre-mixed with sand)</option>
+              <option value="concentrate">Concentrate (add sand &amp; water onsite)</option>
             </select>
           </label>
         </div>
-
-        <label>
-          Number of Coats
-          <input id="coats" type="number" min="1" step="1" value="2" />
-        </label>
-
-        <label>
-          Packaging
-          <select id="packagingType">
-            <option value="55">55 Gallon Drums</option>
-            <option value="5">5 Gallon Pails</option>
-            <option value="1">1 Gallon Pails</option>
-          </select>
-        </label>
-
-        <label>
-          Mix Type
-          <select id="mixType">
-            <option value="concentrate">Concentrate (add sand/water onsite)</option>
-            <option value="ready">Ready Mix (factory blended)</option>
-          </select>
-        </label>
       </section>
 
-      <section class="card" aria-label="Calculation Summary">
+      <!-- ─── Step 4: Colors ─── -->
+      <section class="card" aria-label="Color Selection">
+        <h2>Step 4: Select Colors</h2>
+        <p class="step-hint">Choose a color for each court zone.</p>
+        <div id="zoneColorsContainer" class="form-row"></div>
+      </section>
+
+      <!-- ─── Summary ─── -->
+      <section class="card" aria-label="Summary">
         <h2>Summary</h2>
-        <div id="summary" class="summary-grid"></div>
+        <div id="summaryGrid" class="summary-grid"></div>
       </section>
 
-      <section class="card" aria-label="Material Recommendations">
-        <h2>Recommended Materials</h2>
+      <!-- ─── Zone Area Breakdown ─── -->
+      <section class="card" aria-label="Zone Areas">
+        <h2>Zone Area Breakdown</h2>
         <table>
           <thead>
-            <tr>
-              <th>Material</th>
-              <th>Coats</th>
-              <th>Coverage (sq ft/gal/coat)</th>
-              <th>Gallons Needed</th>
-              <th>Packaging Needed</th>
-              <th>Item Number</th>
-            </tr>
+            <tr><th>Zone</th><th>Square Feet</th><th>Square Yards</th></tr>
           </thead>
-          <tbody id="resultsBody"></tbody>
+          <tbody id="zoneAreasBody"></tbody>
         </table>
       </section>
 
-      <section class="card" aria-label="Crack Filler Guidance">
+      <!-- ─── Crack Filler Guidance ─── -->
+      <section class="card" aria-label="Crack Filler">
         <h2>Crack Filler Guidance</h2>
+        <p class="disclaimer">These coverage rates may vary depending on width as well as depth of the cracks.</p>
         <table>
           <thead>
-            <tr>
-              <th>Product</th>
-              <th>Linear Feet / Gallon</th>
-              <th>Recommended Width</th>
-              <th>Disclaimer</th>
-            </tr>
+            <tr><th>Product</th><th>Linear Feet / Gallon</th><th>Recommended Width</th></tr>
           </thead>
           <tbody id="crackBody"></tbody>
+        </table>
+      </section>
+
+      <!-- ─── Total Area Materials ─── -->
+      <section class="card" aria-label="Total Area Materials">
+        <h2>Total Area Materials (Resurfacer)</h2>
+        <table>
+          <thead>
+            <tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
+          </thead>
+          <tbody id="totalAreaBody"></tbody>
+        </table>
+      </section>
+
+      <!-- ─── Zone Product Options ─── -->
+      <section class="card" aria-label="Zone Products">
+        <h2>Court Zone Product Options</h2>
+        <table>
+          <thead>
+            <tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
+          </thead>
+          <tbody id="zoneProductsBody"></tbody>
+        </table>
+      </section>
+
+      <!-- ─── ProCushion ─── -->
+      <section class="card" aria-label="ProCushion">
+        <h2>ProCushion Layers (Optional)</h2>
+        <table>
+          <thead>
+            <tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
+          </thead>
+          <tbody id="cushionBody"></tbody>
+        </table>
+      </section>
+
+      <!-- ─── Striping ─── -->
+      <section class="card" aria-label="Striping">
+        <h2>Striping</h2>
+        <table>
+          <thead>
+            <tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
+          </thead>
+          <tbody id="stripingBody"></tbody>
         </table>
       </section>
     </main>
