@@ -358,18 +358,22 @@ function calculate(inputs) {
   // Adhesion Promoter: only for concrete/existing concrete surfaces
   const showAdhesion = surfaceType === 'concrete' || surfaceType === 'existingConcrete';
   if (showAdhesion) {
+    const adhesionCoats = 1;
+    const adhesionRate = getCoverageRate('Acrylic Adhesion Promoter', surfaceType, mixType);
+    const adhesionGallons = calcGallons(adhesionRate, totalSqYd, adhesionCoats);
+    const adhesionPackages = calcPackages(adhesionGallons, pkgSize);
     results.totalArea.push({
       product: 'Acrylic Adhesion Promoter',
-      coats: '',
-      gallons: '',
-      packaging: '',
+      coats: adhesionCoats,
+      gallons: adhesionGallons,
+      packaging: adhesionPackages + ' x ' + pkgSize + ' Gal',
       item: getItemNumber('Acrylic Adhesion Promoter', packaging, mixType),
       note: 'Recommended for concrete surfaces'
     });
   }
 
-  // Resurfacer — always 2 coats (matches all Excel hidden sheets)
-  const resurfacerCoats = 2;
+  // Resurfacer — 1 coat for new concrete, 2 coats for all other surfaces
+  const resurfacerCoats = surfaceType === 'concrete' ? 1 : 2;
   if (mixType === 'ready') {
     const resurfacerName = 'Acrylic Resurfacer w/ Sand';
     const rate = getCoverageRate(resurfacerName, surfaceType, 'ready');
