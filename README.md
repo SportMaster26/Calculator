@@ -1,45 +1,44 @@
-# Material Coverage Calculator (Web)
+# SportMaster Product Calculator (Web)
 
-A lightweight front-end app that converts your spreadsheet-style material estimator into a website-ready calculator.
+A web-based calculator that replicates the SportMaster Excel product calculator. Calculates material quantities, packaging, and item numbers for court surfacing projects.
 
-## What it does
+## Features
 
-- Accepts project area as either:
-  - **Total area** (sq ft / sq yd / sq m), or
-  - **Width × Length** (ft / yd / m)
-- Supports multiple project templates (tennis, pickleball, basketball)
-- Applies coats, mix style, and packaging selections
-- Calculates gallons needed and number of packages required
-- Displays crack filler guidance table
+- **5 Court Types**: Tennis, Pickleball, Basketball Full Court, Basketball Half Court, Total Area (Custom)
+- **4 Input Modes**: Width x Length (ft), Square Footage, Square Yardage, Square Meters
+- **4 Surface Types**: New Concrete, New Asphalt, Existing Concrete, Existing Asphalt
+- **3 Packaging Options**: 55 Gallon Drums, 30 Gallon Kegs, 5 Gallon Pails
+- **2 Mix Types**: Ready-to-Use (pre-mixed with sand) or Concentrate (add sand & water)
+- **17 ColorPlus Colors** per zone
+- **Per-zone breakdowns**: Resurfacer, Neutral Concentrate, Color Sand, ColorPlus tinting
+- **ProCushion layers**: Standard and Premium systems
+- **Striping**: Stripe Rite, White Line Paint, Masking Tape
+- **Crack Filler guidance** reference table
 
-## Run locally
+## How It Works
 
-Because this is a static site, you can host it with any web server.
+The calculator mirrors the Excel workbook logic:
+
+1. **Total area** is converted to square yards
+2. **Coverage rates** (gal/sq yd/coat) are looked up per product and surface type
+3. **Gallons** = `ceil(coverageRate × areaSqYd × coats)`
+4. **Packages** = `ceil(gallons / packageSize)`
+5. **Sand, ColorPlus, and item numbers** are derived from the package count and packaging type
+
+Coverage rate tables come from the `55 GALLONS READY` and `55 GALLONS CONC` sheets in the original Excel workbook.
+
+## Run Locally
 
 ```bash
 python3 -m http.server 4173
 ```
 
-Then open:
+Then open `http://localhost:4173`
 
-- `http://localhost:4173`
+## Deploy
 
-## Adapting this to your exact spreadsheet
-
-Most business logic is in `app.js`:
-
-- `projectTypes`: zones and area ratios for each project type
-- `productCatalog`: item numbers, coverage rates, mix availability
-- `computeRows()`: where gallons and package counts are calculated
-
-Replace those values with the exact values from your workbook tabs.
-
-## Deploy to your website
-
-Upload these files to your web hosting or include them in your existing site:
+Upload these three files to any web host or embed in a CMS (WordPress, Webflow, Wix, Squarespace, etc.):
 
 - `index.html`
 - `styles.css`
 - `app.js`
-
-If your site uses WordPress, Webflow, Wix, Squarespace, etc., this calculator can be embedded in a custom HTML block.
