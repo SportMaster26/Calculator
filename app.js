@@ -81,8 +81,59 @@ const crackFillers = [
   { product: 'CourtFlex', rate: '150 - 200 feet of Cracks', width: 'For Cracks up to 1/2" wide' }
 ];
 
+// ── Product option definitions per court type and mix type ──
+// These are ALTERNATIVES — the user picks ONE product option for the color coating
+const productOptionDefs = {
+  tennis: {
+    ready: [
+      { value: 'neutralSand', label: 'Neutral Concentrate w/ Sand' },
+      { value: 'readyMix', label: 'Ready-Mix Color' }
+    ],
+    concentrate: [
+      { value: 'neutralConc', label: 'Neutral Concentrate' }
+    ]
+  },
+  pickleball: {
+    ready: [
+      { value: 'neutralSand', label: 'Neutral Concentrate w/ Sand' },
+      { value: 'pickleMaster', label: 'PickleMaster' },
+      { value: 'pickleMasterRTU', label: 'PickleMaster RTU' }
+    ],
+    concentrate: [
+      { value: 'neutralConc', label: 'Neutral Concentrate' },
+      { value: 'pickleMaster', label: 'PickleMaster' }
+    ]
+  },
+  basketballFull: {
+    ready: [
+      { value: 'neutralSand', label: 'Neutral Concentrate w/ Sand' },
+      { value: 'readyMix', label: 'Ready-Mix Color' }
+    ],
+    concentrate: [
+      { value: 'neutralConc', label: 'Neutral Concentrate' }
+    ]
+  },
+  basketballHalf: {
+    ready: [
+      { value: 'neutralSand', label: 'Neutral Concentrate w/ Sand' },
+      { value: 'readyMix', label: 'Ready-Mix Color' }
+    ],
+    concentrate: [
+      { value: 'neutralConc', label: 'Neutral Concentrate' }
+    ]
+  },
+  totalArea: {
+    ready: [
+      { value: 'neutralSand', label: 'Neutral Concentrate w/ Sand' },
+      { value: 'readyMix', label: 'Ready-Mix Color' }
+    ],
+    concentrate: [
+      { value: 'neutralConc', label: 'Neutral Concentrate' }
+    ]
+  }
+};
+
 // ── Court type zone definitions ──
-// Each zone has: name, fixedSqFtPerCourt (null = computed), areaRef (which area variable to use)
 const courtDefs = {
   tennis: {
     label: 'Tennis Court',
@@ -92,7 +143,7 @@ const courtDefs = {
       { name: 'Playing Area', sqftPerCourt: 2808 }    // 78*36
     ],
     masktapePerCourt: 8,
-    stripingPerNCourts: 2  // every 2 courts
+    stripingPerNCourts: 1  // 1 gallon per court (Excel: 2 gal for 2 courts)
   },
   pickleball: {
     label: 'Pickleball Court',
@@ -103,7 +154,7 @@ const courtDefs = {
       { name: 'Kitchen Area', sqftPerCourt: 280 }       // 14*20
     ],
     masktapePerCourt: 4,
-    stripingPerNCourts: 2
+    stripingPerNCourts: 2  // 1 gallon per 2 courts
   },
   basketballFull: {
     label: 'Basketball Full Court',
@@ -117,7 +168,7 @@ const courtDefs = {
       { name: 'Center Court Circle', sqftPerCourt: 113 }
     ],
     masktapePerCourt: 8,
-    stripingPerNCourts: 2
+    stripingPerNCourts: 1  // 1 gallon per court
   },
   basketballHalf: {
     label: 'Basketball Half Court',
@@ -130,7 +181,7 @@ const courtDefs = {
       { name: 'Free Throw Circle', sqftPerCourt: 57 }
     ],
     masktapePerCourt: 4,
-    stripingPerNCourts: 2
+    stripingPerNCourts: 1  // 1 gallon per court
   },
   totalArea: {
     label: 'Total Area (Custom)',
@@ -143,48 +194,24 @@ const courtDefs = {
   }
 };
 
-// ── Products per zone per court type (Ready mix) ──
-// Each entry: [productName, fixedCoats]
-// ColorPlus entries are added dynamically
-function getZoneProductsReady(courtType, zoneName) {
-  if (courtType === 'tennis') {
-    return [
-      ['Neutral Concentrate w/ Sand', 2],
-      ['Ready-Mix Color', 2]
-    ];
+// ── Get the selected zone product based on the product option ──
+// Returns [productName, coats] for the selected option
+function getSelectedZoneProduct(productOption, mixType) {
+  if (mixType === 'ready') {
+    switch (productOption) {
+      case 'neutralSand':      return ['Neutral Concentrate w/ Sand', 2];
+      case 'readyMix':         return ['Ready-Mix Color', 2];
+      case 'pickleMaster':     return ['PickleMaster', 2];
+      case 'pickleMasterRTU':  return ['PickleMaster RTU', 2];
+      default:                 return ['Neutral Concentrate w/ Sand', 2];
+    }
+  } else {
+    switch (productOption) {
+      case 'neutralConc':      return ['Neutral Concentrate', 2];
+      case 'pickleMaster':     return ['PickleMaster', 2];
+      default:                 return ['Neutral Concentrate', 2];
+    }
   }
-  if (courtType === 'pickleball') {
-    return [
-      ['Neutral Concentrate w/ Sand', 2],
-      ['PickleMaster', 2],
-      ['PickleMaster RTU', 2]
-    ];
-  }
-  if (courtType === 'basketballFull' || courtType === 'basketballHalf') {
-    return [
-      ['Neutral Concentrate w/ Sand', 2],
-      ['Ready-Mix Color', 2]
-    ];
-  }
-  // totalArea
-  return [
-    ['Neutral Concentrate w/ Sand', 2],
-    ['Ready-Mix Color', 2]
-  ];
-}
-
-// ── Products per zone per court type (Concentrate) ──
-function getZoneProductsConc(courtType, zoneName) {
-  if (courtType === 'pickleball') {
-    return [
-      ['Neutral Concentrate', 2],
-      ['PickleMaster', 2]
-    ];
-  }
-  // tennis, basketball, totalArea
-  return [
-    ['Neutral Concentrate', 2]
-  ];
 }
 
 // ────────────────────────────────────────────────────────
@@ -241,10 +268,8 @@ function getColorPlusCount(packages, packaging) {
 }
 
 function getColorPlusUnit(packaging, productName) {
-  // Ready-Mix Color and PickleMaster RTU with 5-gal pails use 24 OZ Jars
-  if (parseInt(packaging) === 5 && (productName === 'Ready-Mix Color' || productName === 'PickleMaster RTU')) {
-    return '24 OZ Jar(s)';
-  }
+  // Ready-Mix Color and PickleMaster RTU use 24 OZ Jars
+  // All products with 5-gal pails use 24 OZ Jars
   if (parseInt(packaging) === 5) {
     return '24 OZ Jar(s)';
   }
@@ -295,7 +320,7 @@ function computeZoneAreas(courtType, totalSqFt, numCourts) {
 function calculate(inputs) {
   const {
     courtType, inputMode, value1, value2,
-    numCourts, surfaceType, packaging, mixType, zoneColors
+    numCourts, surfaceType, packaging, mixType, productOption, zoneColors
   } = inputs;
 
   // 1) Total area in sqft
@@ -343,16 +368,16 @@ function calculate(inputs) {
     });
   }
 
-  // Resurfacer
+  // Resurfacer — always 2 coats (matches all Excel hidden sheets)
+  const resurfacerCoats = 2;
   if (mixType === 'ready') {
     const resurfacerName = 'Acrylic Resurfacer w/ Sand';
     const rate = getCoverageRate(resurfacerName, surfaceType, 'ready');
-    const coats = surfaceType === 'asphalt' ? 2 : 1;
-    const gallons = calcGallons(rate, totalSqYd, coats);
+    const gallons = calcGallons(rate, totalSqYd, resurfacerCoats);
     const packages = calcPackages(gallons, pkgSize);
     results.totalArea.push({
       product: resurfacerName,
-      coats,
+      coats: resurfacerCoats,
       gallons,
       packaging: packages + ' x ' + pkgSize + ' Gal',
       item: getItemNumber(resurfacerName, packaging, 'ready')
@@ -360,12 +385,11 @@ function calculate(inputs) {
   } else {
     const resurfacerName = 'Acrylic Resurfacer';
     const rate = getCoverageRate(resurfacerName, surfaceType, 'concentrate');
-    const coats = surfaceType === 'asphalt' ? 2 : 1;
-    const gallons = calcGallons(rate, totalSqYd, coats);
+    const gallons = calcGallons(rate, totalSqYd, resurfacerCoats);
     const packages = calcPackages(gallons, pkgSize);
     results.totalArea.push({
       product: resurfacerName,
-      coats,
+      coats: resurfacerCoats,
       gallons,
       packaging: packages + ' x ' + pkgSize + ' Gal',
       item: getItemNumber(resurfacerName, packaging, 'concentrate')
@@ -382,62 +406,61 @@ function calculate(inputs) {
     });
   }
 
-  // ── Per-zone products ──
+  // ── Per-zone products (using the SELECTED product option) ──
+  const [selectedProd, selectedCoats] = getSelectedZoneProduct(productOption, mixType);
+
   zoneAreas.forEach((zone, zi) => {
     if (zone.sqft <= 0) return;
 
     const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
     const colorName = (zoneColors && zoneColors[zi]) || 'Not Selected';
-    const prods = mixType === 'ready'
-      ? getZoneProductsReady(courtType, zone.name)
-      : getZoneProductsConc(courtType, zone.name);
 
-    for (const [prodName, coats] of prods) {
-      const rate = getCoverageRate(prodName, surfaceType, mixType);
-      const gallons = calcGallons(rate, zone.sqyd, coats);
-      const packages = calcPackages(gallons, pkgSize);
+    const prodName = selectedProd;
+    const coats = selectedCoats;
+    const rate = getCoverageRate(prodName, surfaceType, mixType);
+    const gallons = calcGallons(rate, zone.sqyd, coats);
+    const packages = calcPackages(gallons, pkgSize);
 
-      // For PickleMaster RTU and Ready-Mix Color, packaging is always 5-gal pails
-      const effectivePkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color') ? 5 : pkgSize;
-      const effectivePackages = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color')
-        ? calcPackages(gallons, 5)
-        : packages;
+    // For PickleMaster RTU and Ready-Mix Color, packaging is always 5-gal pails
+    const effectivePkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color') ? 5 : pkgSize;
+    const effectivePackages = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color')
+      ? calcPackages(gallons, 5)
+      : packages;
 
+    zoneResult.products.push({
+      product: prodName,
+      coats,
+      gallons,
+      packaging: effectivePackages + ' x ' + effectivePkg + ' Gal',
+      item: getItemNumber(prodName, packaging, mixType)
+    });
+
+    // Concentrate: Color Sand after Neutral Concentrate
+    if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
+      const sandLbs = getColorSandLbs(packages, packaging);
+      const sandBags = Math.ceil(sandLbs / 50);
       zoneResult.products.push({
-        product: prodName,
-        coats,
-        gallons,
-        packaging: effectivePackages + ' x ' + effectivePkg + ' Gal',
-        item: getItemNumber(prodName, packaging, mixType)
+        product: 'Color Sand (80-90 Mesh)',
+        coats: '',
+        gallons: sandLbs + ' lbs',
+        packaging: sandBags + ' - 50 lbs. Bags',
+        item: 'R1010'
       });
+    }
 
-      // Concentrate: Color Sand after Neutral Concentrate
-      if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
-        const sandLbs = getColorSandLbs(packages, packaging);
-        const sandBags = Math.ceil(sandLbs / 50);
+    // ColorPlus tinting
+    if (colorName !== 'Not Selected') {
+      const cpCount = getColorPlusCount(effectivePackages, effectivePkg);
+      const cpUnit = getColorPlusUnit(effectivePkg, prodName);
+      const cpItem = getColorPlusItemNumber(colorName, effectivePkg, prodName);
+      if (cpCount > 0) {
         zoneResult.products.push({
-          product: 'Color Sand (80-90 Mesh)',
+          product: colorName,
           coats: '',
-          gallons: sandLbs + ' lbs',
-          packaging: sandBags + ' - 50 lbs. Bags',
-          item: 'R1010'
+          gallons: '',
+          packaging: cpCount + ' - ' + cpUnit,
+          item: cpItem
         });
-      }
-
-      // ColorPlus tinting
-      if (colorName !== 'Not Selected') {
-        const cpCount = getColorPlusCount(effectivePackages, packaging);
-        const cpUnit = getColorPlusUnit(packaging, prodName);
-        const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
-        if (cpCount > 0) {
-          zoneResult.products.push({
-            product: colorName,
-            coats: '',
-            gallons: '',
-            packaging: cpCount + ' - ' + cpUnit,
-            item: cpItem
-          });
-        }
       }
     }
 
@@ -506,12 +529,13 @@ function getInputs() {
   const surfaceType = $('surfaceType').value;
   const packaging = $('packaging').value;
   const mixType = $('mixType').value;
+  const productOption = $('productOption').value;
 
   // Gather zone colors
   const colorSelects = document.querySelectorAll('.zone-color-select');
   const zoneColors = Array.from(colorSelects).map(s => s.value);
 
-  return { courtType, inputMode, value1, value2, numCourts, surfaceType, packaging, mixType, zoneColors };
+  return { courtType, inputMode, value1, value2, numCourts, surfaceType, packaging, mixType, productOption, zoneColors };
 }
 
 function fmt(n) {
@@ -537,6 +561,29 @@ function populateColorOptions(selectEl) {
     opt.value = c.name;
     opt.textContent = c.name;
     selectEl.appendChild(opt);
+  }
+}
+
+// ── Populate product option dropdown based on court type and mix type ──
+function updateProductOptions() {
+  const courtType = $('courtType').value;
+  const mixType = $('mixType').value;
+  const sel = $('productOption');
+  const currentVal = sel.value;
+
+  const options = productOptionDefs[courtType][mixType === 'ready' ? 'ready' : 'concentrate'];
+  sel.innerHTML = '';
+  for (const opt of options) {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = opt.label;
+    sel.appendChild(el);
+  }
+
+  // Try to preserve previous selection if still available
+  const stillExists = options.some(o => o.value === currentVal);
+  if (stillExists) {
+    sel.value = currentVal;
   }
 }
 
@@ -570,7 +617,6 @@ function updateZoneColorSelectors() {
   const container = $('zoneColorsContainer');
   container.innerHTML = '';
 
-  // Determine visible zones based on court type (matching Excel VBA visibility logic)
   const visibleZones = def.zones;
 
   visibleZones.forEach((zone, i) => {
@@ -700,6 +746,7 @@ function renderNote() {
 // ── Initialize ──
 function init() {
   populateCourtTypes();
+  updateProductOptions();
   updateDimensionFields();
   updateDefaultDimensions();
   updateZoneColorSelectors();
@@ -711,6 +758,7 @@ function init() {
   // Event listeners
   $('courtType').addEventListener('change', () => {
     updateDefaultDimensions();
+    updateProductOptions();
     updateZoneColorSelectors();
     updateCourtsVisibility();
     render();
@@ -719,8 +767,13 @@ function init() {
     updateDimensionFields();
     render();
   });
+  $('mixType').addEventListener('change', () => {
+    updateProductOptions();
+    render();
+  });
+  $('productOption').addEventListener('change', render);
 
-  for (const id of ['value1', 'value2', 'numCourts', 'surfaceType', 'packaging', 'mixType']) {
+  for (const id of ['value1', 'value2', 'numCourts', 'surfaceType', 'packaging']) {
     $(id).addEventListener('input', render);
     $(id).addEventListener('change', render);
   }
