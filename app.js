@@ -82,7 +82,6 @@ const crackFillers = [
 ];
 
 // ── Product option definitions per court type and mix type ──
-// These are ALTERNATIVES — the user picks ONE product option for the color coating
 const productOptionDefs = {
   tennis: {
     ready: [
@@ -139,55 +138,55 @@ const courtDefs = {
     label: 'Tennis Court',
     defaultWidth: 36, defaultLength: 78,
     zones: [
-      { name: 'Outside Area', sqftPerCourt: null },   // = MAX(0, total - playing)
-      { name: 'Playing Area', sqftPerCourt: 2808 }    // 78*36
+      { name: 'Outside Area', sqftPerCourt: null },
+      { name: 'Playing Area', sqftPerCourt: 2808 }
     ],
     masktapePerCourt: 8,
-    stripingPerNCourts: 1  // 1 gallon per court (Excel: 2 gal for 2 courts)
+    stripingPerNCourts: 1
   },
   pickleball: {
     label: 'Pickleball Court',
     defaultWidth: 30, defaultLength: 60,
     zones: [
-      { name: 'Total Area', sqftPerCourt: null },      // = total entered area
-      { name: 'Service Area', sqftPerCourt: 600 },      // 15*20*2
-      { name: 'Kitchen Area', sqftPerCourt: 280 }       // 14*20
+      { name: 'Total Area', sqftPerCourt: null },
+      { name: 'Service Area', sqftPerCourt: 600 },
+      { name: 'Kitchen Area', sqftPerCourt: 280 }
     ],
     masktapePerCourt: 4,
-    stripingPerNCourts: 2  // 1 gallon per 2 courts
+    stripingPerNCourts: 2
   },
   basketballFull: {
     label: 'Basketball Full Court',
     defaultWidth: 50, defaultLength: 84,
     zones: [
       { name: 'Court', sqftPerCourt: 4200 },
-      { name: 'Border', sqftPerCourt: null },           // = MAX(0, total - court)
+      { name: 'Border', sqftPerCourt: null },
       { name: 'Three Point Area', sqftPerCourt: 1224 },
       { name: 'Key', sqftPerCourt: 456 },
       { name: 'Free Throw Circle', sqftPerCourt: 113 },
       { name: 'Center Court Circle', sqftPerCourt: 113 }
     ],
     masktapePerCourt: 8,
-    stripingPerNCourts: 1  // 1 gallon per court
+    stripingPerNCourts: 1
   },
   basketballHalf: {
     label: 'Basketball Half Court',
     defaultWidth: 50, defaultLength: 47,
     zones: [
       { name: 'Court', sqftPerCourt: 2100 },
-      { name: 'Border', sqftPerCourt: null },           // = MAX(0, total - court)
+      { name: 'Border', sqftPerCourt: null },
       { name: 'Three Point Area', sqftPerCourt: 612 },
       { name: 'Key', sqftPerCourt: 228 },
       { name: 'Free Throw Circle', sqftPerCourt: 57 }
     ],
     masktapePerCourt: 4,
-    stripingPerNCourts: 1  // 1 gallon per court
+    stripingPerNCourts: 1
   },
   totalArea: {
     label: 'Total Area (Custom)',
     defaultWidth: 50, defaultLength: 64,
     zones: [
-      { name: 'Total Area', sqftPerCourt: null }       // = total entered area
+      { name: 'Total Area', sqftPerCourt: null }
     ],
     masktapePerCourt: 0,
     stripingPerNCourts: 0
@@ -195,7 +194,6 @@ const courtDefs = {
 };
 
 // ── Get the selected zone product based on the product option ──
-// Returns [productName, coats] for the selected option
 function getSelectedZoneProduct(productOption, mixType) {
   if (mixType === 'ready') {
     switch (productOption) {
@@ -230,7 +228,6 @@ function getItemNumber(productName, packaging, mixType) {
   const table = mixType === 'ready' ? itemNumbersReady : itemNumbersConc;
   const base = table[productName];
   if (!base) return '';
-  // Products that already have a fixed suffix (like C1285P, C1299P)
   if (base.endsWith('P')) return base;
   const suffix = { 5: 'P', 30: 'K', 55: 'D' }[packaging] || '';
   return base + suffix;
@@ -250,7 +247,6 @@ function calcPackages(gallons, packageSize) {
   return Math.ceil(gallons / packageSize);
 }
 
-// Sand amounts per package (Concentrate only)
 function getResurfacerSandLbs(packages, packaging) {
   const mult = { 5: 70, 30: 400, 55: 750 }[packaging] || 0;
   return packages * mult;
@@ -261,53 +257,44 @@ function getColorSandLbs(packages, packaging) {
   return packages * mult;
 }
 
-// ColorPlus quantity per package
 function getColorPlusCount(packages, packaging) {
   const mult = { 5: 2, 30: 2, 55: 4 }[packaging] || 0;
   return packages * mult;
 }
 
-function getColorPlusUnit(packaging, productName) {
-  // Ready-Mix Color and PickleMaster RTU use 24 OZ Jars
-  // All products with 5-gal pails use 24 OZ Jars
+function getColorPlusUnit(packaging) {
   if (parseInt(packaging) === 5) {
     return '24 OZ Jar(s)';
   }
   return '1 Gallon Pail(s)';
 }
 
-function getColorPlusItemNumber(colorName, packaging, productName) {
+function getColorPlusItemNumber(colorName, packaging) {
   const color = colorOptions.find(c => c.name === colorName);
   if (!color || !color.itemG) return '';
   const usesJars = parseInt(packaging) === 5;
   return usesJars ? color.itemJ : color.itemG;
 }
 
-// ── Compute zone areas ──
+// ── Compute zone areas for a single court entry ──
 function computeZoneAreas(courtType, totalSqFt, numCourts) {
   const def = courtDefs[courtType];
   const zones = [];
-
   for (const zone of def.zones) {
     let areaSqFt;
     if (zone.sqftPerCourt !== null) {
       areaSqFt = Math.ceil(zone.sqftPerCourt * numCourts);
     } else {
-      // Computed zones
       if (courtType === 'tennis') {
-        // Outside Area = MAX(0, total - playing)
         const playingArea = 2808 * numCourts;
         areaSqFt = Math.max(0, totalSqFt - playingArea);
       } else if (courtType === 'basketballFull') {
-        // Border = MAX(0, total - court)
         const courtArea = 4200 * numCourts;
         areaSqFt = Math.max(0, totalSqFt - courtArea);
       } else if (courtType === 'basketballHalf') {
-        // Border = MAX(0, total - court)
         const courtArea = 2100 * numCourts;
         areaSqFt = Math.max(0, totalSqFt - courtArea);
       } else {
-        // Total Area / Pickleball Total Area = entered total
         areaSqFt = totalSqFt;
       }
     }
@@ -316,201 +303,259 @@ function computeZoneAreas(courtType, totalSqFt, numCourts) {
   return zones;
 }
 
-// ── Main calculation ──
+// ── Main calculation — processes ALL court entries and returns consolidated results ──
 function calculate(inputs) {
-  const {
-    courtType, inputMode, value1, value2,
-    numCourts, surfaceType, packaging, mixType, productOption, zoneColors
-  } = inputs;
-
-  // 1) Total area in sqft
-  let totalSqFt = 0;
-  if (inputMode === 'widthLength') {
-    totalSqFt = (value1 || 0) * (value2 || 0);
-  } else if (inputMode === 'sqft') {
-    totalSqFt = value1 || 0;
-  } else if (inputMode === 'sqyd') {
-    totalSqFt = (value1 || 0) * SQFT_PER_SQYD;
-  } else if (inputMode === 'sqm') {
-    totalSqFt = (value1 || 0) * SQFT_PER_SQM;
-  }
-  const totalSqYd = totalSqFt / SQFT_PER_SQYD;
+  const { courtEntries, surfaceType, packaging, mixType, productOption } = inputs;
   const pkgSize = getPackageSize(packaging);
 
-  // 2) Zone areas
-  const zoneAreas = computeZoneAreas(courtType, totalSqFt, numCourts);
+  // Accumulators for consolidation
+  let grandTotalSqFt = 0;
+  const allZoneAreas = [];          // for zone area breakdown display
+  const totalAreaGallons = {};      // product -> total gallons (resurfacer section)
+  const zoneProductGallons = {};    // product -> total gallons (color coating section)
+  const colorPlusTotals = {};       // colorName -> total count
+  let totalSandLbs = 0;            // resurfacer sand (concentrate)
+  let totalColorSandLbs = 0;       // color sand (concentrate)
+  let totalStripingGal = 0;
+  let totalTapeRolls = 0;
+  const cushionGallons = {};        // product -> { standard: gal, premium: gal }
+  const courtSummaryParts = [];     // for summary display
 
-  // 3) Build results
+  // Track resurfacer coats (for display — may differ per entry but we show max)
+  let resurfacerCoatsMax = 0;
+
+  for (const entry of courtEntries) {
+    // Calculate total sqft for this entry
+    let entrySqFt = 0;
+    if (entry.inputMode === 'widthLength') {
+      entrySqFt = (entry.value1 || 0) * (entry.value2 || 0);
+    } else if (entry.inputMode === 'sqft') {
+      entrySqFt = entry.value1 || 0;
+    } else if (entry.inputMode === 'sqyd') {
+      entrySqFt = (entry.value1 || 0) * SQFT_PER_SQYD;
+    } else if (entry.inputMode === 'sqm') {
+      entrySqFt = (entry.value1 || 0) * SQFT_PER_SQM;
+    }
+    const entrySqYd = entrySqFt / SQFT_PER_SQYD;
+    grandTotalSqFt += entrySqFt;
+
+    const courtLabel = courtDefs[entry.courtType].label;
+    courtSummaryParts.push(entry.numCourts + 'x ' + courtLabel);
+
+    // Zone areas for this entry
+    const zoneAreas = computeZoneAreas(entry.courtType, entrySqFt, entry.numCourts);
+    for (const z of zoneAreas) {
+      allZoneAreas.push({ name: z.name + ' (' + courtLabel + ')', sqft: z.sqft, sqyd: z.sqyd });
+    }
+
+    // ── Total Area products (Adhesion Promoter + Resurfacer) ──
+    const showAdhesion = surfaceType === 'concrete' || surfaceType === 'existingConcrete';
+    if (showAdhesion) {
+      const adhesionRate = getCoverageRate('Acrylic Adhesion Promoter', surfaceType, mixType);
+      const adhesionGallons = calcGallons(adhesionRate, entrySqYd, 1);
+      totalAreaGallons['Acrylic Adhesion Promoter'] = (totalAreaGallons['Acrylic Adhesion Promoter'] || 0) + adhesionGallons;
+    }
+
+    const resurfacerCoats = surfaceType === 'concrete' ? 1 : 2;
+    if (resurfacerCoats > resurfacerCoatsMax) resurfacerCoatsMax = resurfacerCoats;
+
+    if (mixType === 'ready') {
+      const resurfacerName = 'Acrylic Resurfacer w/ Sand';
+      const rate = getCoverageRate(resurfacerName, surfaceType, 'ready');
+      const gallons = calcGallons(rate, entrySqYd, resurfacerCoats);
+      totalAreaGallons[resurfacerName] = (totalAreaGallons[resurfacerName] || 0) + gallons;
+    } else {
+      const resurfacerName = 'Acrylic Resurfacer';
+      const rate = getCoverageRate(resurfacerName, surfaceType, 'concentrate');
+      const gallons = calcGallons(rate, entrySqYd, resurfacerCoats);
+      totalAreaGallons[resurfacerName] = (totalAreaGallons[resurfacerName] || 0) + gallons;
+    }
+
+    // ── Per-zone products (color coating) ──
+    const [selectedProd, selectedCoats] = getSelectedZoneProduct(productOption, mixType);
+
+    zoneAreas.forEach((zone, zi) => {
+      if (zone.sqft <= 0) return;
+      const rate = getCoverageRate(selectedProd, surfaceType, mixType);
+      const gallons = calcGallons(rate, zone.sqyd, selectedCoats);
+      zoneProductGallons[selectedProd] = (zoneProductGallons[selectedProd] || 0) + gallons;
+
+      // Concentrate color sand
+      if (mixType === 'concentrate' && selectedProd === 'Neutral Concentrate') {
+        const packages = calcPackages(gallons, pkgSize);
+        totalColorSandLbs += getColorSandLbs(packages, packaging);
+      }
+
+      // ColorPlus
+      const colorName = (entry.zoneColors && entry.zoneColors[zi]) || 'Not Selected';
+      if (colorName !== 'Not Selected') {
+        const effectivePkg = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? 5 : pkgSize;
+        const effectivePackages = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color')
+          ? calcPackages(gallons, 5)
+          : calcPackages(gallons, pkgSize);
+        const cpCount = getColorPlusCount(effectivePackages, effectivePkg);
+        colorPlusTotals[colorName] = (colorPlusTotals[colorName] || 0) + cpCount;
+      }
+    });
+
+    // ── ProCushion ──
+    const cushionItems = [
+      { product: 'CushionMaster II (Coarse Rubber)', standardCoats: 3, premiumCoats: 5 },
+      { product: 'CushionMaster I (Fine Rubber)', standardCoats: 2, premiumCoats: 2 }
+    ];
+    for (const item of cushionItems) {
+      const rate = getCoverageRate(item.product, surfaceType, mixType);
+      const stdGal = calcGallons(rate, entrySqYd, item.standardCoats);
+      const premGal = calcGallons(rate, entrySqYd, item.premiumCoats);
+      if (!cushionGallons[item.product]) {
+        cushionGallons[item.product] = { standard: 0, premium: 0 };
+      }
+      cushionGallons[item.product].standard += stdGal;
+      cushionGallons[item.product].premium += premGal;
+    }
+
+    // ── Striping ──
+    const def = courtDefs[entry.courtType];
+    if (def.stripingPerNCourts > 0) {
+      totalStripingGal += Math.ceil(entry.numCourts / def.stripingPerNCourts);
+      totalTapeRolls += Math.ceil(def.masktapePerCourt * entry.numCourts);
+    }
+  }
+
+  // ── Build consolidated results ──
   const results = { totalArea: [], zones: [], cushion: [], striping: [], summary: {} };
+  const grandTotalSqYd = grandTotalSqFt / SQFT_PER_SQYD;
 
   results.summary = {
-    totalSqFt,
-    totalSqYd,
-    totalSqM: totalSqFt / SQFT_PER_SQM,
-    numCourts,
-    courtType: courtDefs[courtType].label,
+    totalSqFt: grandTotalSqFt,
+    totalSqYd: grandTotalSqYd,
+    totalSqM: grandTotalSqFt / SQFT_PER_SQM,
+    courts: courtSummaryParts.join(', '),
     mixType: mixType === 'ready' ? 'Ready-to-Use' : 'Concentrate',
     surfaceType,
     packaging: pkgSize + ' Gallon'
   };
 
-  // ── Total Area products (Adhesion Promoter + Resurfacer) ──
-  // Adhesion Promoter: only for concrete/existing concrete surfaces
-  const showAdhesion = surfaceType === 'concrete' || surfaceType === 'existingConcrete';
-  if (showAdhesion) {
-    const adhesionCoats = 1;
-    const adhesionRate = getCoverageRate('Acrylic Adhesion Promoter', surfaceType, mixType);
-    const adhesionGallons = calcGallons(adhesionRate, totalSqYd, adhesionCoats);
-    const adhesionPackages = calcPackages(adhesionGallons, pkgSize);
+  // Zone area breakdown (for display)
+  results.zoneAreas = allZoneAreas;
+
+  // ── Consolidated Total Area Materials ──
+  if (totalAreaGallons['Acrylic Adhesion Promoter']) {
+    const gal = totalAreaGallons['Acrylic Adhesion Promoter'];
+    const pkg = calcPackages(gal, pkgSize);
     results.totalArea.push({
       product: 'Acrylic Adhesion Promoter',
-      coats: adhesionCoats,
-      gallons: adhesionGallons,
-      packaging: adhesionPackages + ' x ' + pkgSize + ' Gal',
-      item: getItemNumber('Acrylic Adhesion Promoter', packaging, mixType),
-      note: 'Recommended for concrete surfaces'
+      coats: 1,
+      gallons: gal,
+      packaging: pkg + ' x ' + pkgSize + ' Gal',
+      item: getItemNumber('Acrylic Adhesion Promoter', packaging, mixType)
     });
   }
 
-  // Resurfacer — 1 coat for new concrete, 2 coats for all other surfaces
-  const resurfacerCoats = surfaceType === 'concrete' ? 1 : 2;
-  if (mixType === 'ready') {
-    const resurfacerName = 'Acrylic Resurfacer w/ Sand';
-    const rate = getCoverageRate(resurfacerName, surfaceType, 'ready');
-    const gallons = calcGallons(rate, totalSqYd, resurfacerCoats);
-    const packages = calcPackages(gallons, pkgSize);
+  const resurfacerName = mixType === 'ready' ? 'Acrylic Resurfacer w/ Sand' : 'Acrylic Resurfacer';
+  if (totalAreaGallons[resurfacerName]) {
+    const gal = totalAreaGallons[resurfacerName];
+    const pkg = calcPackages(gal, pkgSize);
     results.totalArea.push({
       product: resurfacerName,
-      coats: resurfacerCoats,
-      gallons,
-      packaging: packages + ' x ' + pkgSize + ' Gal',
-      item: getItemNumber(resurfacerName, packaging, 'ready')
-    });
-  } else {
-    const resurfacerName = 'Acrylic Resurfacer';
-    const rate = getCoverageRate(resurfacerName, surfaceType, 'concentrate');
-    const gallons = calcGallons(rate, totalSqYd, resurfacerCoats);
-    const packages = calcPackages(gallons, pkgSize);
-    results.totalArea.push({
-      product: resurfacerName,
-      coats: resurfacerCoats,
-      gallons,
-      packaging: packages + ' x ' + pkgSize + ' Gal',
-      item: getItemNumber(resurfacerName, packaging, 'concentrate')
-    });
-    // Resurfacer Sand
-    const sandLbs = getResurfacerSandLbs(packages, packaging);
-    const sandBags = Math.ceil(sandLbs / 50);
-    results.totalArea.push({
-      product: 'Resurfacer Sand (50-60 Mesh)',
-      coats: '',
-      gallons: sandLbs + ' lbs',
-      packaging: sandBags + ' - 50 lbs. Bags',
-      item: 'R1020'
-    });
-  }
-
-  // ── Per-zone products (using the SELECTED product option) ──
-  const [selectedProd, selectedCoats] = getSelectedZoneProduct(productOption, mixType);
-
-  zoneAreas.forEach((zone, zi) => {
-    if (zone.sqft <= 0) return;
-
-    const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
-    const colorName = (zoneColors && zoneColors[zi]) || 'Not Selected';
-
-    const prodName = selectedProd;
-    const coats = selectedCoats;
-    const rate = getCoverageRate(prodName, surfaceType, mixType);
-    const gallons = calcGallons(rate, zone.sqyd, coats);
-    const packages = calcPackages(gallons, pkgSize);
-
-    // For PickleMaster RTU and Ready-Mix Color, packaging is always 5-gal pails
-    const effectivePkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color') ? 5 : pkgSize;
-    const effectivePackages = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color')
-      ? calcPackages(gallons, 5)
-      : packages;
-
-    zoneResult.products.push({
-      product: prodName,
-      coats,
-      gallons,
-      packaging: effectivePackages + ' x ' + effectivePkg + ' Gal',
-      item: getItemNumber(prodName, packaging, mixType)
+      coats: resurfacerCoatsMax,
+      gallons: gal,
+      packaging: pkg + ' x ' + pkgSize + ' Gal',
+      item: getItemNumber(resurfacerName, packaging, mixType)
     });
 
-    // Concentrate: Color Sand after Neutral Concentrate
-    if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
-      const sandLbs = getColorSandLbs(packages, packaging);
+    // Concentrate: resurfacer sand
+    if (mixType === 'concentrate') {
+      const sandLbs = getResurfacerSandLbs(pkg, packaging);
       const sandBags = Math.ceil(sandLbs / 50);
-      zoneResult.products.push({
-        product: 'Color Sand (80-90 Mesh)',
+      results.totalArea.push({
+        product: 'Resurfacer Sand (50-60 Mesh)',
         coats: '',
         gallons: sandLbs + ' lbs',
         packaging: sandBags + ' - 50 lbs. Bags',
-        item: 'R1010'
+        item: 'R1020'
       });
     }
-
-    // ColorPlus tinting
-    if (colorName !== 'Not Selected') {
-      const cpCount = getColorPlusCount(effectivePackages, effectivePkg);
-      const cpUnit = getColorPlusUnit(effectivePkg, prodName);
-      const cpItem = getColorPlusItemNumber(colorName, effectivePkg, prodName);
-      if (cpCount > 0) {
-        zoneResult.products.push({
-          product: colorName,
-          coats: '',
-          gallons: '',
-          packaging: cpCount + ' - ' + cpUnit,
-          item: cpItem
-        });
-      }
-    }
-
-    results.zones.push(zoneResult);
-  });
-
-  // ── ProCushion Layers ──
-  const cushionProducts = [
-    { system: 'Standard System', items: [
-      { product: 'CushionMaster II (Coarse Rubber)', coats: 3 },
-      { product: 'CushionMaster I (Fine Rubber)', coats: 2 }
-    ]},
-    { system: 'Premium System', items: [
-      { product: 'CushionMaster II (Coarse Rubber)', coats: 5 },
-      { product: 'CushionMaster I (Fine Rubber)', coats: 2 }
-    ]}
-  ];
-  for (const sys of cushionProducts) {
-    const sysResult = { system: sys.system, items: [] };
-    for (const item of sys.items) {
-      const rate = getCoverageRate(item.product, surfaceType, mixType);
-      const gallons = calcGallons(rate, totalSqYd, item.coats);
-      const packages = calcPackages(gallons, pkgSize);
-      sysResult.items.push({
-        product: item.product,
-        coats: item.coats,
-        gallons,
-        packaging: packages + ' x ' + pkgSize + ' Gal',
-        item: getItemNumber(item.product, packaging, mixType)
-      });
-    }
-    results.cushion.push(sysResult);
   }
 
-  // ── Striping ──
-  const def = courtDefs[courtType];
-  if (def.stripingPerNCourts > 0) {
-    const stripingQty = Math.ceil(numCourts / def.stripingPerNCourts);
+  // ── Consolidated Zone Products (Color Coating) ──
+  const [selectedProd, selectedCoats] = getSelectedZoneProduct(productOption, mixType);
+
+  for (const [prodName, totalGal] of Object.entries(zoneProductGallons)) {
+    const effectivePkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color') ? 5 : pkgSize;
+    const effectivePackages = calcPackages(totalGal, effectivePkg);
+    results.zones.push({
+      product: prodName,
+      coats: selectedCoats,
+      gallons: totalGal,
+      packaging: effectivePackages + ' x ' + effectivePkg + ' Gal',
+      item: getItemNumber(prodName, packaging, mixType)
+    });
+  }
+
+  // Concentrate: color sand total
+  if (mixType === 'concentrate' && totalColorSandLbs > 0) {
+    const sandBags = Math.ceil(totalColorSandLbs / 50);
+    results.zones.push({
+      product: 'Color Sand (80-90 Mesh)',
+      coats: '',
+      gallons: totalColorSandLbs + ' lbs',
+      packaging: sandBags + ' - 50 lbs. Bags',
+      item: 'R1010'
+    });
+  }
+
+  // ColorPlus totals
+  const cpUnit = getColorPlusUnit((selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? 5 : pkgSize);
+  for (const [colorName, count] of Object.entries(colorPlusTotals)) {
+    if (count > 0) {
+      const effectivePkg = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? 5 : pkgSize;
+      results.zones.push({
+        product: colorName,
+        coats: '',
+        gallons: '',
+        packaging: count + ' - ' + cpUnit,
+        item: getColorPlusItemNumber(colorName, effectivePkg)
+      });
+    }
+  }
+
+  // ── Consolidated ProCushion ──
+  const cushionOrder = ['CushionMaster II (Coarse Rubber)', 'CushionMaster I (Fine Rubber)'];
+  const standardItems = [];
+  const premiumItems = [];
+  for (const prod of cushionOrder) {
+    if (cushionGallons[prod]) {
+      const stdGal = cushionGallons[prod].standard;
+      const premGal = cushionGallons[prod].premium;
+      const stdPkg = calcPackages(stdGal, pkgSize);
+      const premPkg = calcPackages(premGal, pkgSize);
+      const stdCoats = prod.includes('Coarse') ? 3 : 2;
+      const premCoats = prod.includes('Coarse') ? 5 : 2;
+      standardItems.push({
+        product: prod, coats: stdCoats, gallons: stdGal,
+        packaging: stdPkg + ' x ' + pkgSize + ' Gal',
+        item: getItemNumber(prod, packaging, mixType)
+      });
+      premiumItems.push({
+        product: prod, coats: premCoats, gallons: premGal,
+        packaging: premPkg + ' x ' + pkgSize + ' Gal',
+        item: getItemNumber(prod, packaging, mixType)
+      });
+    }
+  }
+  results.cushion.push({ system: 'Standard System', items: standardItems });
+  results.cushion.push({ system: 'Premium System', items: premiumItems });
+
+  // ── Consolidated Striping ──
+  if (totalStripingGal > 0) {
     results.striping.push(
-      { product: 'Stripe Rite', coats: 1, gallons: stripingQty, packaging: stripingQty, item: 'C1610G' },
-      { product: 'White Line Paint', coats: 1, gallons: stripingQty, packaging: stripingQty, item: 'C1620G' }
+      { product: 'Stripe Rite', coats: 1, gallons: totalStripingGal, packaging: totalStripingGal, item: 'C1610G' },
+      { product: 'White Line Paint', coats: 1, gallons: totalStripingGal, packaging: totalStripingGal, item: 'C1620G' }
     );
-    const tapeRolls = Math.ceil(def.masktapePerCourt * numCourts);
-    if (tapeRolls > 0) {
+    if (totalTapeRolls > 0) {
       results.striping.push(
-        { product: 'Masking Tape (Standard Roll)', coats: '', gallons: '', packaging: tapeRolls + ' Rolls', item: '' }
+        { product: 'Masking Tape (Standard Roll)', coats: '', gallons: '', packaging: totalTapeRolls + ' Rolls', item: '' }
       );
     }
   }
@@ -524,38 +569,178 @@ function calculate(inputs) {
 
 const $ = id => document.getElementById(id);
 
-function getInputs() {
-  const courtType = $('courtType').value;
-  const inputMode = $('inputMode').value;
-  const value1 = parseFloat($('value1').value) || 0;
-  const value2 = parseFloat($('value2').value) || 0;
-  const numCourts = Math.max(1, parseInt($('numCourts').value, 10) || 1);
-  const surfaceType = $('surfaceType').value;
-  const packaging = $('packaging').value;
-  const mixType = $('mixType').value;
-  const productOption = $('productOption').value;
+// ── Court entries state ──
+let courtEntryId = 0;
+let courtEntries = []; // array of { id, el }
 
-  // Gather zone colors
-  const colorSelects = document.querySelectorAll('.zone-color-select');
-  const zoneColors = Array.from(colorSelects).map(s => s.value);
+function createCourtEntry() {
+  const id = courtEntryId++;
+  const defaultCourt = 'tennis';
+  const def = courtDefs[defaultCourt];
 
-  return { courtType, inputMode, value1, value2, numCourts, surfaceType, packaging, mixType, productOption, zoneColors };
-}
+  const div = document.createElement('div');
+  div.className = 'court-entry';
+  div.dataset.entryId = id;
 
-function fmt(n) {
-  if (typeof n !== 'number' || isNaN(n)) return n;
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
-}
+  div.innerHTML = `
+    <div class="court-entry-header">
+      <h3>Court #${courtEntries.length + 1}</h3>
+      <button type="button" class="btn btn-remove" data-remove="${id}">Remove</button>
+    </div>
+    <div class="form-row">
+      <label>
+        <span>Court Type</span>
+        <select class="ce-courtType">
+          ${Object.entries(courtDefs).map(([key, d]) =>
+            `<option value="${key}">${d.label}</option>`
+          ).join('')}
+        </select>
+      </label>
+      <label>
+        <span>Input Mode</span>
+        <select class="ce-inputMode">
+          <option value="widthLength">Width x Length (Feet)</option>
+          <option value="sqft">Square Footage</option>
+          <option value="sqyd">Square Yardage</option>
+          <option value="sqm">Square Meters</option>
+        </select>
+      </label>
+      <label class="ce-value1-label">
+        <span class="ce-value1-text">Width (Feet)</span>
+        <input class="ce-value1 input-highlight" type="number" min="0" step="0.1" value="${def.defaultWidth}" />
+      </label>
+      <label class="ce-value2-row">
+        <span>Length (Feet)</span>
+        <input class="ce-value2 input-highlight" type="number" min="0" step="0.1" value="${def.defaultLength}" />
+      </label>
+      <label class="ce-numCourts-row">
+        <span>Number of Courts</span>
+        <input class="ce-numCourts input-highlight" type="number" min="1" step="1" value="1" />
+      </label>
+    </div>
+    <div class="zone-colors-row form-row"></div>
+  `;
 
-function populateCourtTypes() {
-  const sel = $('courtType');
-  sel.innerHTML = '';
-  for (const [key, def] of Object.entries(courtDefs)) {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = def.label;
-    sel.appendChild(opt);
+  // Event listeners
+  const courtTypeSelect = div.querySelector('.ce-courtType');
+  const inputModeSelect = div.querySelector('.ce-inputMode');
+  const removeBtn = div.querySelector('.btn-remove');
+
+  courtTypeSelect.addEventListener('change', () => {
+    updateCourtEntryDefaults(div);
+    updateCourtEntryDimensionFields(div);
+    updateCourtEntryZoneColors(div);
+    updateCourtEntryNumCourtsVisibility(div);
+    updateProductOptions();
+    render();
+  });
+
+  inputModeSelect.addEventListener('change', () => {
+    updateCourtEntryDimensionFields(div);
+    render();
+  });
+
+  removeBtn.addEventListener('click', () => {
+    removeCourtEntry(id);
+  });
+
+  // Listen on value inputs
+  for (const cls of ['.ce-value1', '.ce-value2', '.ce-numCourts']) {
+    const el = div.querySelector(cls);
+    el.addEventListener('input', render);
+    el.addEventListener('change', render);
   }
+
+  $('courtEntriesContainer').appendChild(div);
+  courtEntries.push({ id, el: div });
+
+  updateCourtEntryZoneColors(div);
+  updateCourtEntryNumCourtsVisibility(div);
+  renumberCourtEntries();
+  updateProductOptions();
+  render();
+}
+
+function removeCourtEntry(id) {
+  const idx = courtEntries.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  courtEntries[idx].el.remove();
+  courtEntries.splice(idx, 1);
+  if (courtEntries.length === 0) {
+    createCourtEntry();
+    return;
+  }
+  renumberCourtEntries();
+  updateProductOptions();
+  render();
+}
+
+function renumberCourtEntries() {
+  courtEntries.forEach((entry, i) => {
+    entry.el.querySelector('h3').textContent = 'Court #' + (i + 1);
+  });
+  // Hide remove button if only one entry
+  courtEntries.forEach(entry => {
+    const btn = entry.el.querySelector('.btn-remove');
+    btn.style.display = courtEntries.length === 1 ? 'none' : '';
+  });
+}
+
+function updateCourtEntryDefaults(entryDiv) {
+  const courtType = entryDiv.querySelector('.ce-courtType').value;
+  const def = courtDefs[courtType];
+  const inputMode = entryDiv.querySelector('.ce-inputMode').value;
+  if (inputMode === 'widthLength') {
+    entryDiv.querySelector('.ce-value1').value = def.defaultWidth;
+    entryDiv.querySelector('.ce-value2').value = def.defaultLength;
+  }
+}
+
+function updateCourtEntryDimensionFields(entryDiv) {
+  const mode = entryDiv.querySelector('.ce-inputMode').value;
+  const v1Text = entryDiv.querySelector('.ce-value1-text');
+  const v2Row = entryDiv.querySelector('.ce-value2-row');
+
+  if (mode === 'widthLength') {
+    v1Text.textContent = 'Width (Feet)';
+    v2Row.classList.remove('hidden');
+  } else {
+    v2Row.classList.add('hidden');
+    const labels = { sqft: 'Square Footage', sqyd: 'Square Yardage', sqm: 'Square Meters' };
+    v1Text.textContent = labels[mode] || 'Value';
+  }
+}
+
+function updateCourtEntryNumCourtsVisibility(entryDiv) {
+  const courtType = entryDiv.querySelector('.ce-courtType').value;
+  const numCourtsRow = entryDiv.querySelector('.ce-numCourts-row');
+  if (courtType === 'totalArea') {
+    numCourtsRow.classList.add('hidden');
+    entryDiv.querySelector('.ce-numCourts').value = 1;
+  } else {
+    numCourtsRow.classList.remove('hidden');
+  }
+}
+
+function updateCourtEntryZoneColors(entryDiv) {
+  const courtType = entryDiv.querySelector('.ce-courtType').value;
+  const def = courtDefs[courtType];
+  const container = entryDiv.querySelector('.zone-colors-row');
+  container.innerHTML = '';
+
+  def.zones.forEach((zone, i) => {
+    const wrapper = document.createElement('label');
+    wrapper.innerHTML = `<span>${zone.name} Color</span>`;
+    const sel = document.createElement('select');
+    sel.className = 'zone-color-select';
+    sel.dataset.zoneIndex = i;
+    populateColorOptions(sel);
+    if (i === 0) sel.value = 'Light Blue ColorPlus';
+    else sel.value = 'Blue ColorPlus';
+    sel.addEventListener('change', render);
+    wrapper.appendChild(sel);
+    container.appendChild(wrapper);
+  });
 }
 
 function populateColorOptions(selectEl) {
@@ -568,87 +753,79 @@ function populateColorOptions(selectEl) {
   }
 }
 
-// ── Populate product option dropdown based on court type and mix type ──
+// ── Populate product option dropdown ──
+// Now considers ALL court entries to build a union of available options
 function updateProductOptions() {
-  const courtType = $('courtType').value;
   const mixType = $('mixType').value;
   const sel = $('productOption');
   const currentVal = sel.value;
 
-  const options = productOptionDefs[courtType][mixType === 'ready' ? 'ready' : 'concentrate'];
+  // Collect all court types in use
+  const courtTypesInUse = new Set();
+  for (const entry of courtEntries) {
+    courtTypesInUse.add(entry.el.querySelector('.ce-courtType').value);
+  }
+
+  // Find intersection of product options across all court types
+  const mixKey = mixType === 'ready' ? 'ready' : 'concentrate';
+  let commonOptions = null;
+  for (const ct of courtTypesInUse) {
+    const opts = productOptionDefs[ct][mixKey];
+    if (commonOptions === null) {
+      commonOptions = opts.map(o => ({ ...o }));
+    } else {
+      // Keep only options that exist in both
+      commonOptions = commonOptions.filter(co =>
+        opts.some(o => o.value === co.value)
+      );
+    }
+  }
+  if (!commonOptions || commonOptions.length === 0) {
+    // Fallback: use first court type's options
+    const firstCt = courtEntries.length > 0
+      ? courtEntries[0].el.querySelector('.ce-courtType').value
+      : 'tennis';
+    commonOptions = productOptionDefs[firstCt][mixKey];
+  }
+
   sel.innerHTML = '';
-  for (const opt of options) {
+  for (const opt of commonOptions) {
     const el = document.createElement('option');
     el.value = opt.value;
     el.textContent = opt.label;
     sel.appendChild(el);
   }
 
-  // Try to preserve previous selection if still available
-  const stillExists = options.some(o => o.value === currentVal);
+  const stillExists = commonOptions.some(o => o.value === currentVal);
   if (stillExists) {
     sel.value = currentVal;
   }
 }
 
-function updateDimensionFields() {
-  const mode = $('inputMode').value;
-  const v1Label = $('value1Label');
-  const v2Row = $('value2Row');
+function getInputs() {
+  const surfaceType = $('surfaceType').value;
+  const packaging = $('packaging').value;
+  const mixType = $('mixType').value;
+  const productOption = $('productOption').value;
 
-  if (mode === 'widthLength') {
-    v1Label.textContent = 'Width (Feet)';
-    v2Row.classList.remove('hidden');
-  } else {
-    v2Row.classList.add('hidden');
-    const labels = { sqft: 'Square Footage', sqyd: 'Square Yardage', sqm: 'Square Meters' };
-    v1Label.textContent = labels[mode] || 'Value';
-  }
-}
-
-function updateDefaultDimensions() {
-  const courtType = $('courtType').value;
-  const def = courtDefs[courtType];
-  if ($('inputMode').value === 'widthLength') {
-    $('value1').value = def.defaultWidth;
-    $('value2').value = def.defaultLength;
-  }
-}
-
-function updateZoneColorSelectors() {
-  const courtType = $('courtType').value;
-  const def = courtDefs[courtType];
-  const container = $('zoneColorsContainer');
-  container.innerHTML = '';
-
-  const visibleZones = def.zones;
-
-  visibleZones.forEach((zone, i) => {
-    const wrapper = document.createElement('label');
-    wrapper.innerHTML = `<span>${zone.name} Color</span>`;
-    const sel = document.createElement('select');
-    sel.className = 'zone-color-select';
-    sel.dataset.zoneIndex = i;
-    populateColorOptions(sel);
-    // Set sensible defaults
-    if (i === 0) sel.value = 'Light Blue ColorPlus';
-    else sel.value = 'Blue ColorPlus';
-    sel.addEventListener('change', render);
-    wrapper.appendChild(sel);
-    container.appendChild(wrapper);
+  const entries = courtEntries.map(entry => {
+    const el = entry.el;
+    const courtType = el.querySelector('.ce-courtType').value;
+    const inputMode = el.querySelector('.ce-inputMode').value;
+    const value1 = parseFloat(el.querySelector('.ce-value1').value) || 0;
+    const value2 = parseFloat(el.querySelector('.ce-value2').value) || 0;
+    const numCourts = Math.max(1, parseInt(el.querySelector('.ce-numCourts').value, 10) || 1);
+    const colorSelects = el.querySelectorAll('.zone-color-select');
+    const zoneColors = Array.from(colorSelects).map(s => s.value);
+    return { courtType, inputMode, value1, value2, numCourts, zoneColors };
   });
+
+  return { courtEntries: entries, surfaceType, packaging, mixType, productOption };
 }
 
-function updateCourtsVisibility() {
-  const courtType = $('courtType').value;
-  const courtsRow = $('courtsRow');
-  // Total Area doesn't use number of courts
-  if (courtType === 'totalArea') {
-    courtsRow.classList.add('hidden');
-    $('numCourts').value = 1;
-  } else {
-    courtsRow.classList.remove('hidden');
-  }
+function fmt(n) {
+  if (typeof n !== 'number' || isNaN(n)) return n;
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
 }
 
 function renderCrackFillers() {
@@ -664,21 +841,21 @@ function renderCrackFillers() {
 function renderResults(results) {
   // Summary cards
   $('summaryGrid').innerHTML = `
-    <article class="summary-item"><span class="label">Project Type</span><span class="value">${results.summary.courtType}</span></article>
+    <article class="summary-item"><span class="label">Courts</span><span class="value">${results.summary.courts}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq ft)</span><span class="value">${fmt(results.summary.totalSqFt)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq yd)</span><span class="value">${fmt(results.summary.totalSqYd)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq m)</span><span class="value">${fmt(results.summary.totalSqM)}</span></article>
-    <article class="summary-item"><span class="label">Number of Courts</span><span class="value">${results.summary.numCourts}</span></article>
     <article class="summary-item"><span class="label">Mix Type</span><span class="value">${results.summary.mixType}</span></article>
+    <article class="summary-item"><span class="label">Packaging</span><span class="value">${results.summary.packaging}</span></article>
   `;
 
   // Zone area breakdown
-  const zoneAreaRows = results.zones.map(z => `
+  const zoneAreaRows = results.zoneAreas.map(z => `
     <tr><td>${z.name}</td><td>${fmt(z.sqft)}</td><td>${fmt(z.sqyd)}</td></tr>
   `).join('');
   $('zoneAreasBody').innerHTML = zoneAreaRows || '<tr><td colspan="3">Enter dimensions above</td></tr>';
 
-  // Total Area materials
+  // Total Area materials (consolidated)
   $('totalAreaBody').innerHTML = results.totalArea.map(r => `
     <tr>
       <td>${r.product}</td>
@@ -689,23 +866,16 @@ function renderResults(results) {
     </tr>
   `).join('');
 
-  // Per-zone materials
-  let zoneHtml = '';
-  for (const zone of results.zones) {
-    if (zone.products.length === 0) continue;
-    zoneHtml += `<tr class="zone-header"><td colspan="5">${zone.name} (${fmt(zone.sqft)} sq ft)</td></tr>`;
-    for (const p of zone.products) {
-      zoneHtml += `
-        <tr>
-          <td>${p.product}</td>
-          <td>${p.coats}</td>
-          <td>${p.gallons}</td>
-          <td>${p.packaging}</td>
-          <td>${p.item}</td>
-        </tr>`;
-    }
-  }
-  $('zoneProductsBody').innerHTML = zoneHtml || '<tr><td colspan="5">No zone products</td></tr>';
+  // Zone products (consolidated)
+  $('zoneProductsBody').innerHTML = results.zones.map(r => `
+    <tr>
+      <td>${r.product}</td>
+      <td>${r.coats}</td>
+      <td>${r.gallons}</td>
+      <td>${r.packaging}</td>
+      <td>${r.item}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5">No zone products</td></tr>';
 
   // ProCushion
   let cushionHtml = '';
@@ -742,45 +912,34 @@ function render() {
   renderResults(results);
 }
 
-// ── Note text (matches Excel instructions) ──
 function renderNote() {
   $('noteText').textContent = 'Make sure to check Industry Standard Courts for proper dimensions and follow ASBA for Overrun requirements.';
 }
 
 // ── Initialize ──
 function init() {
-  populateCourtTypes();
-  updateProductOptions();
-  updateDimensionFields();
-  updateDefaultDimensions();
-  updateZoneColorSelectors();
-  updateCourtsVisibility();
   renderCrackFillers();
   renderNote();
-  render();
 
-  // Event listeners
-  $('courtType').addEventListener('change', () => {
-    updateDefaultDimensions();
-    updateProductOptions();
-    updateZoneColorSelectors();
-    updateCourtsVisibility();
-    render();
-  });
-  $('inputMode').addEventListener('change', () => {
-    updateDimensionFields();
-    render();
-  });
+  // Create the first court entry
+  createCourtEntry();
+
+  // Global setting listeners
   $('mixType').addEventListener('change', () => {
     updateProductOptions();
     render();
   });
   $('productOption').addEventListener('change', render);
 
-  for (const id of ['value1', 'value2', 'numCourts', 'surfaceType', 'packaging']) {
+  for (const id of ['surfaceType', 'packaging']) {
     $(id).addEventListener('input', render);
     $(id).addEventListener('change', render);
   }
+
+  // Add Court button
+  $('addCourtBtn').addEventListener('click', () => {
+    createCourtEntry();
+  });
 }
 
 init();
