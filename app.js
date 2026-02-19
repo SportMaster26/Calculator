@@ -400,19 +400,17 @@ function calculate(inputs) {
       const gallons = calcGallons(rate, zone.sqyd, selectedCoats);
       zoneProductGallons[selectedProd] = (zoneProductGallons[selectedProd] || 0) + gallons;
 
-      // Round gallons to packaging batch multiple for display & ColorPlus calc
-      const effectivePkg = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? '5' : packaging;
-      const roundedGallons = roundGallonsToPackaging(gallons, effectivePkg);
-
       // Per-zone detail row
       const colorName = (entry.zoneColors && entry.zoneColors[zi]) || 'Not Selected';
-      const colorPlusCount = (colorName !== 'Not Selected') ? calcZoneColorPlus(roundedGallons, effectivePkg) : 0;
+      const effectivePkg = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? 5 : pkgSize;
+      const zonePackages = calcPackages(gallons, effectivePkg);
+      const colorPlusCount = (colorName !== 'Not Selected') ? getColorPlusCount(zonePackages, effectivePkg) : 0;
 
       zoneDetailRows.push({
         zoneName: zone.name + ' (' + courtLabel + ')',
         product: selectedProd,
         coats: selectedCoats,
-        gallons: roundedGallons,
+        gallons: gallons,
         color: colorName,
         colorPlusCount: colorPlusCount
       });
