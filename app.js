@@ -277,24 +277,6 @@ function getColorPlusItemNumber(colorName, packaging) {
   return usesJars ? color.itemJ : color.itemG;
 }
 
-// Round gallons up to the nearest packaging batch multiple
-function roundGallonsToPackaging(gallons, packaging) {
-  if (!gallons) return 0;
-  const pkg = parseInt(packaging);
-  const multiple = { 55: 25, 30: 15, 5: 5 }[pkg] || 5;
-  return Math.ceil(gallons / multiple) * multiple;
-}
-
-// Calculate ColorPlus count from rounded gallons
-function calcZoneColorPlus(roundedGallons, packaging) {
-  if (!roundedGallons) return 0;
-  // Drums: 2 per 25 gal, Kegs: 1 per 15 gal, Pails: 1 per 5 gal
-  const pkg = parseInt(packaging);
-  if (pkg === 55) return (roundedGallons / 25) * 2;
-  if (pkg === 30) return roundedGallons / 15;
-  return roundedGallons / 5; // pails
-}
-
 // ── Compute zone areas for a single court entry ──
 function computeZoneAreas(courtType, totalSqFt, numCourts) {
   const def = courtDefs[courtType];
