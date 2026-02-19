@@ -113,6 +113,60 @@ input:focus {
 }
 .hidden { display: none !important; }
 
+/* ── Court Entry Cards ── */
+.court-entry {
+  background: #f7f9fb;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent-light);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.court-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.court-entry-header h3 {
+  font-size: 0.95rem;
+  color: var(--accent);
+  margin: 0;
+}
+.court-entry .form-row {
+  margin-bottom: 10px;
+}
+.court-entry .zone-colors-row {
+  margin-top: 8px;
+}
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-add {
+  background: var(--accent-light);
+  color: #fff;
+  margin-top: 8px;
+}
+.btn-add:hover {
+  background: var(--accent);
+}
+.btn-remove {
+  background: #e74c3c;
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 4px 12px;
+}
+.btn-remove:hover {
+  background: #c0392b;
+}
+
 /* ── Summary Grid ── */
 .summary-grid {
   display: grid;
