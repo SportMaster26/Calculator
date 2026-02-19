@@ -171,9 +171,133 @@ tbody tr:hover {
   padding: 8px 10px;
   border-bottom: 2px solid var(--accent-light);
 }
+.zone-subheader td {
+  background: #eef4fa;
+  font-weight: 600;
+  color: var(--text);
+  padding: 6px 10px 6px 20px;
+  border-bottom: 1px solid var(--accent-pale);
+  font-size: 0.84rem;
+}
+
+/* ── Court Entry Cards ── */
+.court-entry-card {
+  background: #f8fafb;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.entry-header h3 {
+  font-size: 1rem;
+  color: var(--accent);
+  margin: 0;
+}
+.entry-body {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: start;
+}
+.entry-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Court Preview ── */
+.entry-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.preview-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.preview-svg {
+  width: 100%;
+  max-width: 280px;
+}
+.court-svg {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+.preview-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+/* ── Buttons ── */
+.btn-add {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  background: var(--accent-pale);
+  color: var(--accent);
+  border: 2px dashed var(--accent-light);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-add:hover {
+  background: #bdd8ed;
+  border-color: var(--accent);
+}
+.btn-remove {
+  padding: 4px 12px;
+  background: #fff;
+  color: #c0392b;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-remove:hover {
+  background: #fde8e8;
+}
 
 /* ── Responsive ── */
-@media (max-width: 600px) {
+@media (max-width: 700px) {
+  .entry-body {
+    grid-template-columns: 1fr;
+  }
+  .entry-preview {
+    order: -1;
+  }
   .form-row { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
   table { font-size: 0.8rem; }
