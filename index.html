@@ -416,8 +416,9 @@ function getColorSandLbs(packages, packaging) {
   return packages * mult;
 }
 
-function getColorPlusCount(packages, packaging) {
-  const mult = { 5: 1, 30: 2, 55: 4 }[packaging] || 0;
+function getColorPlusCount(packages, packaging, mixType) {
+  const mult5 = (mixType === 'concentrate') ? 2 : 1;
+  const mult = { 5: mult5, 30: 2, 55: 4 }[packaging] || 0;
   return packages * mult;
 }
 
@@ -544,7 +545,7 @@ function calculate(inputs) {
       const colorName = (entry.zoneColors && entry.zoneColors[zi]) || 'Not Selected';
       const effectivePkg = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? 5 : pkgSize;
       const zonePackages = calcPackages(gallons, effectivePkg);
-      const colorPlusCount = (colorName !== 'Not Selected') ? getColorPlusCount(zonePackages, effectivePkg) : 0;
+      const colorPlusCount = (colorName !== 'Not Selected') ? getColorPlusCount(zonePackages, effectivePkg, mixType) : 0;
 
       zoneDetailRows.push({
         zoneName: zone.name + ' (' + courtLabel + ')',
