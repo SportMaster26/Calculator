@@ -398,7 +398,7 @@ function getPackageSize(packaging) {
 
 function calcGallons(coverageRate, areaSqYd, coats) {
   if (!coverageRate || !areaSqYd || !coats) return 0;
-  return coverageRate * areaSqYd * coats;
+  return Math.ceil(coverageRate * areaSqYd * coats);
 }
 
 function calcPackages(gallons, packageSize) {
@@ -1052,7 +1052,7 @@ function renderResults(results) {
     for (const row of results.zoneDetails) {
       let colorCell = '';
       if (row.color !== 'Not Selected') {
-        colorCell = row.color + ' (' + row.colorPlusCount + ')';
+        colorCell = row.color;
       }
       zoneHtml += `
         <tr>
