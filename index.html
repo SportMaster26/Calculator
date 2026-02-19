@@ -1215,15 +1215,18 @@ function buildCourtSVG(courtType, zoneColors) {
 
 function buildTennisSVG(zoneColors) {
   // Zones: 0=Outside Area, 1=Playing Area
+  // Landscape orientation: long axis (78ft) horizontal, short axis (36ft) vertical
   const outsideColor = getColorHex(zoneColors[0] || 'Not Selected');
   const playingColor = getColorHex(zoneColors[1] || 'Not Selected');
 
-  // Court: 60ft wide x 120ft long total area, playing area 36x78 centered
-  const W = 600, H = 400;
-  const courtW = 360, courtH = 312; // scaled: 36->360, 78->312 (x4 scale)
+  const s = 6; // scale factor
+  const W = 700, H = 340;
+  const courtW = 78 * s, courtH = 36 * s; // 468 x 216
   const cx = W / 2, cy = H / 2;
   const lx = cx - courtW / 2, ly = cy - courtH / 2;
   const lw = 2;
+  const alleyW = 4.5 * s;   // 27px singles sideline offset
+  const serviceL = 21 * s;  // 126px service line distance from net
 
   return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
     <!-- Outside Area -->
@@ -1232,55 +1235,55 @@ function buildTennisSVG(zoneColors) {
     <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="${playingColor}"/>
     <!-- Outer boundary lines -->
     <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="none" stroke="white" stroke-width="${lw}"/>
-    <!-- Net (center horizontal) -->
-    <line x1="${lx - 20}" y1="${cy}" x2="${lx + courtW + 20}" y2="${cy}" stroke="white" stroke-width="3"/>
-    <!-- Singles sidelines (4.5ft in from each side = 18px) -->
-    <line x1="${lx + 18}" y1="${ly}" x2="${lx + 18}" y2="${ly + courtH}" stroke="white" stroke-width="${lw}"/>
-    <line x1="${lx + courtW - 18}" y1="${ly}" x2="${lx + courtW - 18}" y2="${ly + courtH}" stroke="white" stroke-width="${lw}"/>
-    <!-- Service lines (21ft from net = 84px each side) -->
-    <line x1="${lx + 18}" y1="${cy - 84}" x2="${lx + courtW - 18}" y2="${cy - 84}" stroke="white" stroke-width="${lw}"/>
-    <line x1="${lx + 18}" y1="${cy + 84}" x2="${lx + courtW - 18}" y2="${cy + 84}" stroke="white" stroke-width="${lw}"/>
-    <!-- Center service line -->
-    <line x1="${cx}" y1="${cy - 84}" x2="${cx}" y2="${cy + 84}" stroke="white" stroke-width="${lw}"/>
+    <!-- Net (vertical center) -->
+    <line x1="${cx}" y1="${ly - 16}" x2="${cx}" y2="${ly + courtH + 16}" stroke="white" stroke-width="3"/>
+    <!-- Singles sidelines (4.5ft in from top/bottom) -->
+    <line x1="${lx}" y1="${ly + alleyW}" x2="${lx + courtW}" y2="${ly + alleyW}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${lx}" y1="${ly + courtH - alleyW}" x2="${lx + courtW}" y2="${ly + courtH - alleyW}" stroke="white" stroke-width="${lw}"/>
+    <!-- Service lines (21ft from net, left and right) -->
+    <line x1="${cx - serviceL}" y1="${ly + alleyW}" x2="${cx - serviceL}" y2="${ly + courtH - alleyW}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${cx + serviceL}" y1="${ly + alleyW}" x2="${cx + serviceL}" y2="${ly + courtH - alleyW}" stroke="white" stroke-width="${lw}"/>
+    <!-- Center service line (horizontal) -->
+    <line x1="${cx - serviceL}" y1="${cy}" x2="${cx + serviceL}" y2="${cy}" stroke="white" stroke-width="${lw}"/>
     <!-- Center marks on baselines -->
-    <line x1="${cx}" y1="${ly}" x2="${cx}" y2="${ly + 12}" stroke="white" stroke-width="${lw}"/>
-    <line x1="${cx}" y1="${ly + courtH - 12}" x2="${cx}" y2="${ly + courtH}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${lx}" y1="${cy}" x2="${lx + 10}" y2="${cy}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${lx + courtW - 10}" y1="${cy}" x2="${lx + courtW}" y2="${cy}" stroke="white" stroke-width="${lw}"/>
   </svg>`;
 }
 
 function buildPickleballSVG(zoneColors) {
   // Zones: 0=Total Area, 1=Service Area, 2=Kitchen Area
+  // Landscape orientation: long axis (44ft playing / 60ft total) horizontal
   const totalColor = getColorHex(zoneColors[0] || 'Not Selected');
   const serviceColor = getColorHex(zoneColors[1] || 'Not Selected');
   const kitchenColor = getColorHex(zoneColors[2] || 'Not Selected');
 
-  // Court: 30x60 total, playing 20x44, kitchen 20x14 (7ft each side of net)
-  const W = 500, H = 400;
-  const scale = 6;
-  const playW = 20 * scale, playH = 44 * scale; // 120 x 264
+  const s = 7; // scale factor
+  const W = 600, H = 320;
+  const playW = 44 * s, playH = 20 * s; // 308 x 140
   const cx = W / 2, cy = H / 2;
   const lx = cx - playW / 2, ly = cy - playH / 2;
-  const kitchenH = 7 * scale; // 42px each side
+  const kitchenW = 7 * s; // 49px each side of net
   const lw = 2;
 
   return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
     <!-- Total Area background -->
     <rect x="0" y="0" width="${W}" height="${H}" fill="${totalColor}" rx="4"/>
-    <!-- Service Areas (top half and bottom half minus kitchen) -->
-    <rect x="${lx}" y="${ly}" width="${playW}" height="${playH / 2 - kitchenH}" fill="${serviceColor}"/>
-    <rect x="${lx}" y="${cy + kitchenH}" width="${playW}" height="${playH / 2 - kitchenH}" fill="${serviceColor}"/>
+    <!-- Service Areas (left half and right half minus kitchen) -->
+    <rect x="${lx}" y="${ly}" width="${playW / 2 - kitchenW}" height="${playH}" fill="${serviceColor}"/>
+    <rect x="${cx + kitchenW}" y="${ly}" width="${playW / 2 - kitchenW}" height="${playH}" fill="${serviceColor}"/>
     <!-- Kitchen / Non-Volley Zone -->
-    <rect x="${lx}" y="${cy - kitchenH}" width="${playW}" height="${kitchenH * 2}" fill="${kitchenColor}"/>
+    <rect x="${cx - kitchenW}" y="${ly}" width="${kitchenW * 2}" height="${playH}" fill="${kitchenColor}"/>
     <!-- Court outline -->
     <rect x="${lx}" y="${ly}" width="${playW}" height="${playH}" fill="none" stroke="white" stroke-width="${lw}"/>
-    <!-- Net -->
-    <line x1="${lx - 10}" y1="${cy}" x2="${lx + playW + 10}" y2="${cy}" stroke="white" stroke-width="3"/>
-    <!-- Kitchen lines -->
-    <line x1="${lx}" y1="${cy - kitchenH}" x2="${lx + playW}" y2="${cy - kitchenH}" stroke="white" stroke-width="${lw}"/>
-    <line x1="${lx}" y1="${cy + kitchenH}" x2="${lx + playW}" y2="${cy + kitchenH}" stroke="white" stroke-width="${lw}"/>
-    <!-- Center service lines -->
-    <line x1="${cx}" y1="${ly}" x2="${cx}" y2="${cy - kitchenH}" stroke="white" stroke-width="${lw}"/>
-    <line x1="${cx}" y1="${cy + kitchenH}" x2="${cx}" y2="${ly + playH}" stroke="white" stroke-width="${lw}"/>
+    <!-- Net (vertical center) -->
+    <line x1="${cx}" y1="${ly - 10}" x2="${cx}" y2="${ly + playH + 10}" stroke="white" stroke-width="3"/>
+    <!-- Kitchen lines (vertical) -->
+    <line x1="${cx - kitchenW}" y1="${ly}" x2="${cx - kitchenW}" y2="${ly + playH}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${cx + kitchenW}" y1="${ly}" x2="${cx + kitchenW}" y2="${ly + playH}" stroke="white" stroke-width="${lw}"/>
+    <!-- Center service lines (horizontal) -->
+    <line x1="${lx}" y1="${cy}" x2="${cx - kitchenW}" y2="${cy}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${cx + kitchenW}" y1="${cy}" x2="${lx + playW}" y2="${cy}" stroke="white" stroke-width="${lw}"/>
   </svg>`;
 }
 
@@ -1293,19 +1296,24 @@ function buildBasketballFullSVG(zoneColors) {
   const ftCircleColor = getColorHex(zoneColors[4] || 'Not Selected');
   const centerColor = getColorHex(zoneColors[5] || 'Not Selected');
 
-  const W = 700, H = 400;
-  const courtW = 588, courtH = 350; // 84x50 scaled by 7
+  const s = 7; // scale: 1ft = 7px
+  const W = 700, H = 420;
+  const courtW = 84 * s, courtH = 50 * s; // 588 x 350
   const cx = W / 2, cy = H / 2;
   const lx = (W - courtW) / 2, ly = (H - courtH) / 2;
   const lw = 2;
-  // Key: 12ft wide x 19ft long = 84x133
-  const keyW = 84, keyH = 133;
-  // Three-point arc radius: ~23.75ft = 166px, but we'll draw a stylized version
-  const arcR = 140;
-  // Free throw circle radius: 6ft = 42px
-  const ftR = 42;
-  // Center circle radius: 6ft = 42px
-  const ccR = 42;
+  // Key: 16ft wide x 19ft long (NBA lane)
+  const keyW = 16 * s, keyH = 19 * s; // 112 x 133
+  // Basket: 4ft from baseline
+  const basketOff = 4 * s; // 28px
+  // Three-point arc: 23.75ft from basket center
+  const arcR = 23.75 * s; // ~166px
+  // Free throw circle: 6ft radius
+  const ftR = 6 * s; // 42px
+  // Center circle: 6ft radius
+  const ccR = 6 * s; // 42px
+  // Three-point corner distance from sideline: ~3ft straight section
+  const cornerW = 3 * s; // 21px — the straight part along the sideline
 
   return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
     <!-- Border -->
@@ -1314,37 +1322,38 @@ function buildBasketballFullSVG(zoneColors) {
     <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="${courtColor}"/>
 
     <!-- LEFT SIDE -->
-    <!-- Three Point Area (left) -->
-    <clipPath id="threeLeftClip"><rect x="${lx}" y="${ly}" width="${courtW / 2}" height="${courtH}"/></clipPath>
-    <ellipse cx="${lx + 2}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="${threeColor}" clip-path="url(#threeLeftClip)"/>
-    <!-- Key (left) -->
+    <!-- Three Point Area fill (left) — clipped to left half of court -->
+    <clipPath id="tpLeftClip"><rect x="${lx}" y="${ly}" width="${courtW / 2}" height="${courtH}"/></clipPath>
+    <!-- Corner rectangles + arc for three-point fill -->
+    <rect x="${lx}" y="${ly}" width="${basketOff + cornerW}" height="${courtH}" fill="${threeColor}" clip-path="url(#tpLeftClip)"/>
+    <circle cx="${lx + basketOff}" cy="${cy}" r="${arcR}" fill="${threeColor}" clip-path="url(#tpLeftClip)"/>
+    <!-- Key (left) — drawn on top of three-point -->
     <rect x="${lx}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="${keyColor}"/>
-    <!-- Free Throw Circle (left) -->
+    <!-- Free Throw Circle (left) — drawn on top of key -->
     <circle cx="${lx + keyH}" cy="${cy}" r="${ftR}" fill="${ftCircleColor}"/>
-    <!-- Key + FT outlines -->
+    <!-- Outlines -->
     <rect x="${lx}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="none" stroke="white" stroke-width="${lw}"/>
     <circle cx="${lx + keyH}" cy="${cy}" r="${ftR}" fill="none" stroke="white" stroke-width="${lw}"/>
-    <!-- Three point arc outline (left) -->
-    <ellipse cx="${lx + 2}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#threeLeftClip)"/>
+    <circle cx="${lx + basketOff}" cy="${cy}" r="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#tpLeftClip)"/>
     <!-- Backboard & rim (left) -->
-    <line x1="${lx + 28}" y1="${cy - 14}" x2="${lx + 28}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
-    <circle cx="${lx + 38}" cy="${cy}" r="10" fill="none" stroke="white" stroke-width="${lw}"/>
+    <line x1="${lx + basketOff}" y1="${cy - 14}" x2="${lx + basketOff}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
+    <circle cx="${lx + basketOff + 10}" cy="${cy}" r="8" fill="none" stroke="white" stroke-width="${lw}"/>
 
     <!-- RIGHT SIDE -->
-    <clipPath id="threeRightClip"><rect x="${lx + courtW / 2}" y="${ly}" width="${courtW / 2}" height="${courtH}"/></clipPath>
-    <ellipse cx="${lx + courtW - 2}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="${threeColor}" clip-path="url(#threeRightClip)"/>
+    <clipPath id="tpRightClip"><rect x="${lx + courtW / 2}" y="${ly}" width="${courtW / 2}" height="${courtH}"/></clipPath>
+    <rect x="${lx + courtW - basketOff - cornerW}" y="${ly}" width="${basketOff + cornerW}" height="${courtH}" fill="${threeColor}" clip-path="url(#tpRightClip)"/>
+    <circle cx="${lx + courtW - basketOff}" cy="${cy}" r="${arcR}" fill="${threeColor}" clip-path="url(#tpRightClip)"/>
     <!-- Key (right) -->
     <rect x="${lx + courtW - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="${keyColor}"/>
     <!-- Free Throw Circle (right) -->
     <circle cx="${lx + courtW - keyH}" cy="${cy}" r="${ftR}" fill="${ftCircleColor}"/>
-    <!-- Key + FT outlines -->
+    <!-- Outlines -->
     <rect x="${lx + courtW - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="none" stroke="white" stroke-width="${lw}"/>
     <circle cx="${lx + courtW - keyH}" cy="${cy}" r="${ftR}" fill="none" stroke="white" stroke-width="${lw}"/>
-    <!-- Three point arc outline (right) -->
-    <ellipse cx="${lx + courtW - 2}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#threeRightClip)"/>
+    <circle cx="${lx + courtW - basketOff}" cy="${cy}" r="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#tpRightClip)"/>
     <!-- Backboard & rim (right) -->
-    <line x1="${lx + courtW - 28}" y1="${cy - 14}" x2="${lx + courtW - 28}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
-    <circle cx="${lx + courtW - 38}" cy="${cy}" r="10" fill="none" stroke="white" stroke-width="${lw}"/>
+    <line x1="${lx + courtW - basketOff}" y1="${cy - 14}" x2="${lx + courtW - basketOff}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
+    <circle cx="${lx + courtW - basketOff - 10}" cy="${cy}" r="8" fill="none" stroke="white" stroke-width="${lw}"/>
 
     <!-- Center Court -->
     <circle cx="${cx}" cy="${cy}" r="${ccR}" fill="${centerColor}"/>
@@ -1364,14 +1373,20 @@ function buildBasketballHalfSVG(zoneColors) {
   const keyColor = getColorHex(zoneColors[3] || 'Not Selected');
   const ftCircleColor = getColorHex(zoneColors[4] || 'Not Selected');
 
-  const W = 500, H = 400;
-  const courtW = 329, courtH = 350; // 47x50 scaled by 7
+  const s = 7; // scale: 1ft = 7px
+  const W = 500, H = 420;
+  const courtW = 47 * s, courtH = 50 * s; // 329 x 350
   const cx = W / 2, cy = H / 2;
   const lx = (W - courtW) / 2, ly = (H - courtH) / 2;
   const lw = 2;
-  const keyW = 84, keyH = 133;
-  const arcR = 140;
-  const ftR = 42;
+  const keyW = 16 * s, keyH = 19 * s; // 112 x 133
+  const basketOff = 4 * s; // 28px from baseline to basket
+  const arcR = 23.75 * s;  // ~166px three-point radius
+  const ftR = 6 * s;       // 42px free throw circle radius
+  const cornerW = 3 * s;   // 21px corner straight section
+
+  // Basket is on the RIGHT side (baseline)
+  const baselineX = lx + courtW;
 
   return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
     <!-- Border -->
@@ -1380,19 +1395,20 @@ function buildBasketballHalfSVG(zoneColors) {
     <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="${courtColor}"/>
 
     <!-- Three Point Area -->
-    <clipPath id="threeHalfClip"><rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}"/></clipPath>
-    <ellipse cx="${lx + courtW}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="${threeColor}" clip-path="url(#threeHalfClip)"/>
+    <clipPath id="tpHalfClip"><rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}"/></clipPath>
+    <rect x="${baselineX - basketOff - cornerW}" y="${ly}" width="${basketOff + cornerW}" height="${courtH}" fill="${threeColor}" clip-path="url(#tpHalfClip)"/>
+    <circle cx="${baselineX - basketOff}" cy="${cy}" r="${arcR}" fill="${threeColor}" clip-path="url(#tpHalfClip)"/>
     <!-- Key -->
-    <rect x="${lx + courtW - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="${keyColor}"/>
+    <rect x="${baselineX - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="${keyColor}"/>
     <!-- Free Throw Circle -->
-    <circle cx="${lx + courtW - keyH}" cy="${cy}" r="${ftR}" fill="${ftCircleColor}"/>
+    <circle cx="${baselineX - keyH}" cy="${cy}" r="${ftR}" fill="${ftCircleColor}"/>
     <!-- Outlines -->
-    <rect x="${lx + courtW - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="none" stroke="white" stroke-width="${lw}"/>
-    <circle cx="${lx + courtW - keyH}" cy="${cy}" r="${ftR}" fill="none" stroke="white" stroke-width="${lw}"/>
-    <ellipse cx="${lx + courtW}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#threeHalfClip)"/>
+    <rect x="${baselineX - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <circle cx="${baselineX - keyH}" cy="${cy}" r="${ftR}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <circle cx="${baselineX - basketOff}" cy="${cy}" r="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#tpHalfClip)"/>
     <!-- Backboard & rim -->
-    <line x1="${lx + courtW - 28}" y1="${cy - 14}" x2="${lx + courtW - 28}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
-    <circle cx="${lx + courtW - 38}" cy="${cy}" r="10" fill="none" stroke="white" stroke-width="${lw}"/>
+    <line x1="${baselineX - basketOff}" y1="${cy - 14}" x2="${baselineX - basketOff}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
+    <circle cx="${baselineX - basketOff - 10}" cy="${cy}" r="8" fill="none" stroke="white" stroke-width="${lw}"/>
     <!-- Court outline -->
     <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="none" stroke="white" stroke-width="${lw}"/>
   </svg>`;
