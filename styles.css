@@ -225,6 +225,11 @@ tbody tr:hover {
   padding: 8px 10px;
   border-bottom: 2px solid var(--accent-light);
 }
+.total-row td {
+  font-weight: 700;
+  background: #eaf2f8;
+  border-top: 2px solid var(--accent);
+}
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
