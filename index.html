@@ -417,7 +417,7 @@ function getColorSandLbs(packages, packaging) {
 }
 
 function getColorPlusCount(packages, packaging) {
-  const mult = { 5: 2, 30: 2, 55: 4 }[packaging] || 0;
+  const mult = { 5: 1, 30: 2, 55: 4 }[packaging] || 0;
   return packages * mult;
 }
 
