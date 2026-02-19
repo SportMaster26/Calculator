@@ -277,22 +277,14 @@ function getColorPlusItemNumber(colorName, packaging) {
   return usesJars ? color.itemJ : color.itemG;
 }
 
-// Round gallons up to the nearest packaging batch multiple
-function roundGallonsToPackaging(gallons, packaging) {
-  if (!gallons) return 0;
-  const pkg = parseInt(packaging);
-  const multiple = { 55: 25, 30: 15, 5: 5 }[pkg] || 5;
-  return Math.ceil(gallons / multiple) * multiple;
-}
-
-// Calculate ColorPlus count from rounded gallons
-function calcZoneColorPlus(roundedGallons, packaging) {
-  if (!roundedGallons) return 0;
-  // Drums: 2 per 25 gal, Kegs: 1 per 15 gal, Pails: 1 per 5 gal
-  const pkg = parseInt(packaging);
-  if (pkg === 55) return (roundedGallons / 25) * 2;
-  if (pkg === 30) return roundedGallons / 15;
-  return roundedGallons / 5; // pails
+// Auto-select the most efficient container type based on gallons needed
+function selectBestPackaging(gallons) {
+  if (!gallons || gallons <= 0) return 5;
+  if (gallons < 30) return 5; // Under 30 → 5 gallon pails
+  // Compare waste: drums (55) vs kegs (30) — pick whichever wastes less
+  const drumWaste = Math.ceil(gallons / 55) * 55 - gallons;
+  const kegWaste = Math.ceil(gallons / 30) * 30 - gallons;
+  return drumWaste <= kegWaste ? 55 : 30;
 }
 
 // ── Compute zone areas for a single court entry ──
@@ -324,28 +316,21 @@ function computeZoneAreas(courtType, totalSqFt, numCourts) {
 
 // ── Main calculation — processes ALL court entries and returns consolidated results ──
 function calculate(inputs) {
-  const { courtEntries, surfaceType, packaging, mixType, productOption, cushionSystem } = inputs;
-  const pkgSize = getPackageSize(packaging);
+  const { courtEntries, surfaceType, mixType, productOption, cushionSystem } = inputs;
 
-  // Accumulators for consolidation
+  // ── Phase 1: Accumulate raw gallons (no packaging decisions yet) ──
   let grandTotalSqFt = 0;
-  const allZoneAreas = [];          // for zone area breakdown display
-  const totalAreaGallons = {};      // product -> total gallons (resurfacer section)
-  const zoneDetailRows = [];        // per-zone detail rows for color coating
-  const zoneProductGallons = {};    // product -> total gallons (color coating totals)
-  const colorPlusTotals = {};       // colorName -> total count
-  let totalSandLbs = 0;            // resurfacer sand (concentrate)
-  let totalColorSandLbs = 0;       // color sand (concentrate)
+  const allZoneAreas = [];
+  const totalAreaGallons = {};
+  const rawZoneDetails = [];         // per-zone raw data (packaging TBD)
+  const zoneProductGallons = {};     // product -> total gallons
   let totalStripingGal = 0;
   let totalTapeRolls = 0;
-  const cushionGallons = {};        // product -> { standard: gal, premium: gal }
-  const courtSummaryParts = [];     // for summary display
-
-  // Track resurfacer coats (for display — may differ per entry but we show max)
+  const cushionGallons = {};
+  const courtSummaryParts = [];
   let resurfacerCoatsMax = 0;
 
   for (const entry of courtEntries) {
-    // Calculate total sqft for this entry
     let entrySqFt = 0;
     if (entry.inputMode === 'widthLength') {
       entrySqFt = (entry.value1 || 0) * (entry.value2 || 0);
@@ -362,7 +347,6 @@ function calculate(inputs) {
     const courtLabel = courtDefs[entry.courtType].label;
     courtSummaryParts.push(entry.numCourts + 'x ' + courtLabel);
 
-    // Zone areas for this entry
     const zoneAreas = computeZoneAreas(entry.courtType, entrySqFt, entry.numCourts);
     for (const z of zoneAreas) {
       allZoneAreas.push({ name: z.name + ' (' + courtLabel + ')', sqft: z.sqft, sqyd: z.sqyd });
@@ -391,7 +375,7 @@ function calculate(inputs) {
       totalAreaGallons[resurfacerName] = (totalAreaGallons[resurfacerName] || 0) + gallons;
     }
 
-    // ── Per-zone products (color coating) ──
+    // ── Per-zone products (color coating) — collect raw gallons only ──
     const [selectedProd, selectedCoats] = getSelectedZoneProduct(productOption, mixType);
 
     zoneAreas.forEach((zone, zi) => {
@@ -400,33 +384,14 @@ function calculate(inputs) {
       const gallons = calcGallons(rate, zone.sqyd, selectedCoats);
       zoneProductGallons[selectedProd] = (zoneProductGallons[selectedProd] || 0) + gallons;
 
-      // Round gallons to packaging batch multiple for display & ColorPlus calc
-      const effectivePkg = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? '5' : packaging;
-      const roundedGallons = roundGallonsToPackaging(gallons, effectivePkg);
-
-      // Per-zone detail row
       const colorName = (entry.zoneColors && entry.zoneColors[zi]) || 'Not Selected';
-      const colorPlusCount = (colorName !== 'Not Selected') ? calcZoneColorPlus(roundedGallons, effectivePkg) : 0;
-
-      zoneDetailRows.push({
+      rawZoneDetails.push({
         zoneName: zone.name + ' (' + courtLabel + ')',
         product: selectedProd,
         coats: selectedCoats,
-        gallons: roundedGallons,
-        color: colorName,
-        colorPlusCount: colorPlusCount
+        gallons: gallons,
+        color: colorName
       });
-
-      // Concentrate color sand
-      if (mixType === 'concentrate' && selectedProd === 'Neutral Concentrate') {
-        const packages = calcPackages(gallons, pkgSize);
-        totalColorSandLbs += getColorSandLbs(packages, packaging);
-      }
-
-      // ColorPlus totals
-      if (colorName !== 'Not Selected') {
-        colorPlusTotals[colorName] = (colorPlusTotals[colorName] || 0) + colorPlusCount;
-      }
     });
 
     // ── ProCushion (only if selected) ──
@@ -439,9 +404,7 @@ function calculate(inputs) {
         const coats = cushionSystem === 'premium' ? item.premiumCoats : item.standardCoats;
         const rate = getCoverageRate(item.product, surfaceType, mixType);
         const gal = calcGallons(rate, entrySqYd, coats);
-        if (!cushionGallons[item.product]) {
-          cushionGallons[item.product] = 0;
-        }
+        if (!cushionGallons[item.product]) cushionGallons[item.product] = 0;
         cushionGallons[item.product] += gal;
       }
     }
@@ -454,7 +417,25 @@ function calculate(inputs) {
     }
   }
 
-  // ── Build consolidated results ──
+  // ── Phase 2: Auto-select best packaging per product ──
+  const adhesionGal = totalAreaGallons['Acrylic Adhesion Promoter'] || 0;
+  const adhesionPkg = selectBestPackaging(adhesionGal);
+
+  const resurfacerName = mixType === 'ready' ? 'Acrylic Resurfacer w/ Sand' : 'Acrylic Resurfacer';
+  const resurfacerGal = totalAreaGallons[resurfacerName] || 0;
+  const resurfacerPkg = selectBestPackaging(resurfacerGal);
+
+  const [selectedProd, selectedCoats] = getSelectedZoneProduct(productOption, mixType);
+  const isAlways5Gal = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color');
+  const totalColorGal = Object.values(zoneProductGallons).reduce((a, b) => a + b, 0);
+  const colorPkg = isAlways5Gal ? 5 : selectBestPackaging(totalColorGal);
+
+  const cushionPkgMap = {};
+  for (const [prod, gal] of Object.entries(cushionGallons)) {
+    cushionPkgMap[prod] = selectBestPackaging(gal);
+  }
+
+  // ── Phase 3: Build consolidated results ──
   const results = { totalArea: [], zoneDetails: [], zoneTotals: [], cushion: [], striping: [], summary: {} };
   const grandTotalSqYd = grandTotalSqFt / SQFT_PER_SQYD;
 
@@ -464,41 +445,35 @@ function calculate(inputs) {
     totalSqM: grandTotalSqFt / SQFT_PER_SQM,
     courts: courtSummaryParts.join(', '),
     mixType: mixType === 'ready' ? 'Ready-to-Use' : 'Concentrate',
-    surfaceType,
-    packaging: pkgSize + ' Gallon'
+    surfaceType
   };
 
-  // Zone area breakdown (for display)
   results.zoneAreas = allZoneAreas;
 
-  // ── Consolidated Total Area Materials ──
-  if (totalAreaGallons['Acrylic Adhesion Promoter']) {
-    const gal = totalAreaGallons['Acrylic Adhesion Promoter'];
-    const pkg = calcPackages(gal, pkgSize);
+  // ── Total Area Materials ──
+  if (adhesionGal > 0) {
+    const packages = calcPackages(adhesionGal, adhesionPkg);
     results.totalArea.push({
       product: 'Acrylic Adhesion Promoter',
       coats: 1,
-      gallons: gal,
-      packaging: pkg + ' x ' + pkgSize + ' Gal',
-      item: getItemNumber('Acrylic Adhesion Promoter', packaging, mixType)
+      gallons: adhesionGal,
+      packaging: packages + ' x ' + adhesionPkg + ' Gal',
+      item: getItemNumber('Acrylic Adhesion Promoter', String(adhesionPkg), mixType)
     });
   }
 
-  const resurfacerName = mixType === 'ready' ? 'Acrylic Resurfacer w/ Sand' : 'Acrylic Resurfacer';
-  if (totalAreaGallons[resurfacerName]) {
-    const gal = totalAreaGallons[resurfacerName];
-    const pkg = calcPackages(gal, pkgSize);
+  if (resurfacerGal > 0) {
+    const packages = calcPackages(resurfacerGal, resurfacerPkg);
     results.totalArea.push({
       product: resurfacerName,
       coats: resurfacerCoatsMax,
-      gallons: gal,
-      packaging: pkg + ' x ' + pkgSize + ' Gal',
-      item: getItemNumber(resurfacerName, packaging, mixType)
+      gallons: resurfacerGal,
+      packaging: packages + ' x ' + resurfacerPkg + ' Gal',
+      item: getItemNumber(resurfacerName, String(resurfacerPkg), mixType)
     });
 
-    // Concentrate: resurfacer sand
     if (mixType === 'concentrate') {
-      const sandLbs = getResurfacerSandLbs(pkg, packaging);
+      const sandLbs = getResurfacerSandLbs(packages, String(resurfacerPkg));
       const sandBags = Math.ceil(sandLbs / 50);
       results.totalArea.push({
         product: 'Resurfacer Sand (50-60 Mesh)',
@@ -510,65 +485,78 @@ function calculate(inputs) {
     }
   }
 
-  // ── Per-zone detail rows ──
-  results.zoneDetails = zoneDetailRows;
+  // ── Per-zone detail rows (raw gallons — no rounding) ──
+  results.zoneDetails = rawZoneDetails;
 
   // ── Consolidated Zone Totals (Color Coating) ──
-  const [selectedProd, selectedCoats] = getSelectedZoneProduct(productOption, mixType);
-
   for (const [prodName, totalGal] of Object.entries(zoneProductGallons)) {
-    const effectivePkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color') ? 5 : pkgSize;
-    const effectivePackages = calcPackages(totalGal, effectivePkg);
+    const effectivePkg = isAlways5Gal ? 5 : colorPkg;
+    const packages = calcPackages(totalGal, effectivePkg);
     results.zoneTotals.push({
       product: prodName,
       coats: selectedCoats,
       gallons: totalGal,
-      packaging: effectivePackages + ' x ' + effectivePkg + ' Gal',
-      item: getItemNumber(prodName, packaging, mixType)
+      packaging: packages + ' x ' + effectivePkg + ' Gal',
+      item: getItemNumber(prodName, String(effectivePkg), mixType)
     });
   }
 
   // Concentrate: color sand total
-  if (mixType === 'concentrate' && totalColorSandLbs > 0) {
-    const sandBags = Math.ceil(totalColorSandLbs / 50);
-    results.zoneTotals.push({
-      product: 'Color Sand (80-90 Mesh)',
-      coats: '',
-      gallons: totalColorSandLbs + ' lbs',
-      packaging: sandBags + ' - 50 lbs. Bags',
-      item: 'R1010'
-    });
+  if (mixType === 'concentrate' && selectedProd === 'Neutral Concentrate') {
+    const totalGal = zoneProductGallons['Neutral Concentrate'] || 0;
+    const packages = calcPackages(totalGal, colorPkg);
+    const sandLbs = getColorSandLbs(packages, String(colorPkg));
+    if (sandLbs > 0) {
+      const sandBags = Math.ceil(sandLbs / 50);
+      results.zoneTotals.push({
+        product: 'Color Sand (80-90 Mesh)',
+        coats: '',
+        gallons: sandLbs + ' lbs',
+        packaging: sandBags + ' - 50 lbs. Bags',
+        item: 'R1010'
+      });
+    }
   }
 
-  // ColorPlus totals
-  const cpUnit = getColorPlusUnit((selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? 5 : pkgSize);
+  // ColorPlus totals — computed per-zone from packages
+  const colorPlusTotals = {};
+  for (const raw of rawZoneDetails) {
+    if (raw.color && raw.color !== 'Not Selected') {
+      const effectivePkg = isAlways5Gal ? 5 : colorPkg;
+      const zonePackages = calcPackages(raw.gallons, effectivePkg);
+      const cpCount = getColorPlusCount(zonePackages, String(effectivePkg));
+      colorPlusTotals[raw.color] = (colorPlusTotals[raw.color] || 0) + cpCount;
+    }
+  }
+
+  const cpUnit = getColorPlusUnit(isAlways5Gal ? 5 : colorPkg);
   for (const [colorName, count] of Object.entries(colorPlusTotals)) {
     if (count > 0) {
-      const effectivePkg = (selectedProd === 'PickleMaster RTU' || selectedProd === 'Ready-Mix Color') ? 5 : pkgSize;
       results.zoneTotals.push({
         product: colorName,
         coats: '',
         gallons: '',
         packaging: count + ' - ' + cpUnit,
-        item: getColorPlusItemNumber(colorName, effectivePkg)
+        item: getColorPlusItemNumber(colorName, isAlways5Gal ? 5 : colorPkg)
       });
     }
   }
 
-  // ── Consolidated ProCushion (only selected system) ──
+  // ── Consolidated ProCushion ──
   if (cushionSystem !== 'none') {
     const cushionOrder = ['CushionMaster II (Coarse Rubber)', 'CushionMaster I (Fine Rubber)'];
     for (const prod of cushionOrder) {
       if (cushionGallons[prod]) {
         const gal = cushionGallons[prod];
-        const pkg = calcPackages(gal, pkgSize);
+        const pkg = cushionPkgMap[prod];
+        const packages = calcPackages(gal, pkg);
         const coats = cushionSystem === 'premium'
           ? (prod.includes('Coarse') ? 5 : 2)
           : (prod.includes('Coarse') ? 3 : 2);
         results.cushion.push({
           product: prod, coats, gallons: gal,
-          packaging: pkg + ' x ' + pkgSize + ' Gal',
-          item: getItemNumber(prod, packaging, mixType)
+          packaging: packages + ' x ' + pkg + ' Gal',
+          item: getItemNumber(prod, String(pkg), mixType)
         });
       }
     }
@@ -831,7 +819,6 @@ function updateProductOptions() {
 
 function getInputs() {
   const surfaceType = $('surfaceType').value;
-  const packaging = $('packaging').value;
   const mixType = $('mixType').value;
   const productOption = $('productOption').value;
   const cushionSystem = $('cushionSystem').value;
@@ -848,7 +835,7 @@ function getInputs() {
     return { courtType, inputMode, value1, value2, numCourts, zoneColors };
   });
 
-  return { courtEntries: entries, surfaceType, packaging, mixType, productOption, cushionSystem };
+  return { courtEntries: entries, surfaceType, mixType, productOption, cushionSystem };
 }
 
 function fmt(n) {
@@ -888,7 +875,7 @@ function renderResults(results) {
     <article class="summary-item"><span class="label">Total Area (sq yd)</span><span class="value">${fmt(results.summary.totalSqYd)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq m)</span><span class="value">${fmt(results.summary.totalSqM)}</span></article>
     <article class="summary-item"><span class="label">Mix Type</span><span class="value">${results.summary.mixType}</span></article>
-    <article class="summary-item"><span class="label">Packaging</span><span class="value">${results.summary.packaging}</span></article>
+    <article class="summary-item"><span class="label">Packaging</span><span class="value">Auto (Best Fit)</span></article>
   `;
 
   // Zone area breakdown
@@ -912,10 +899,7 @@ function renderResults(results) {
   let zoneHtml = '';
   if (results.zoneDetails.length > 0) {
     for (const row of results.zoneDetails) {
-      let colorCell = '';
-      if (row.color !== 'Not Selected') {
-        colorCell = row.color + ' (' + row.colorPlusCount + ')';
-      }
+      const colorCell = (row.color !== 'Not Selected') ? row.color : '';
       zoneHtml += `
         <tr>
           <td>${row.zoneName}</td>
@@ -995,10 +979,8 @@ function init() {
   $('productOption').addEventListener('change', render);
   $('cushionSystem').addEventListener('change', render);
 
-  for (const id of ['surfaceType', 'packaging']) {
-    $(id).addEventListener('input', render);
-    $(id).addEventListener('change', render);
-  }
+  $('surfaceType').addEventListener('input', render);
+  $('surfaceType').addEventListener('change', render);
 
   // Crack filler linear feet input
   $('crackLinearFeet').addEventListener('input', renderCrackFillers);
