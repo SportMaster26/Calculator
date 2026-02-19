@@ -16,7 +16,7 @@ const coverageReady = {
   'CushionMaster II (Coarse Rubber)':[0.15, 0.15, 0.15, 0.15],
   'Neutral Concentrate w/ Sand':     [0.07, 0.09, 0.07, 0.07],
   'PickleMaster':                    [0.07, 0.09, 0.07, 0.07],
-  'Ready-Mix Color':                 [0.09, 0.11, 0.09, 0.09],
+  'Ready Mix':                        [0.09, 0.11, 0.09, 0.09],
   'PickleMaster RTU':                [0.09, 0.11, 0.09, 0.09]
 };
 
@@ -39,7 +39,7 @@ const itemNumbersReady = {
   'CushionMaster II (Coarse Rubber)': 'C1460',
   'Neutral Concentrate w/ Sand': 'C1365',
   'PickleMaster': 'C1298',
-  'Ready-Mix Color': 'C1285P',
+  'Ready Mix': 'C1285P',
   'PickleMaster RTU': 'C1299P'
 };
 
@@ -150,7 +150,7 @@ function getZoneProductsReady(courtType, zoneName) {
   if (courtType === 'tennis') {
     return [
       ['Neutral Concentrate w/ Sand', 2],
-      ['Ready-Mix Color', 2]
+      ['Ready Mix', 2]
     ];
   }
   if (courtType === 'pickleball') {
@@ -163,13 +163,13 @@ function getZoneProductsReady(courtType, zoneName) {
   if (courtType === 'basketballFull' || courtType === 'basketballHalf') {
     return [
       ['Neutral Concentrate w/ Sand', 2],
-      ['Ready-Mix Color', 2]
+      ['Ready Mix', 2]
     ];
   }
   // totalArea
   return [
     ['Neutral Concentrate w/ Sand', 2],
-    ['Ready-Mix Color', 2]
+    ['Ready Mix', 2]
   ];
 }
 
@@ -235,14 +235,18 @@ function getColorSandLbs(packages, packaging) {
 }
 
 // ColorPlus quantity per package
-function getColorPlusCount(packages, packaging) {
+function getColorPlusCount(packages, packaging, productName) {
+  // Ready Mix: 1 jar per 5-gal pail
+  if (productName === 'Ready Mix' || productName === 'PickleMaster RTU') {
+    return packages * 1;
+  }
   const mult = { 5: 2, 30: 2, 55: 4 }[packaging] || 0;
   return packages * mult;
 }
 
 function getColorPlusUnit(packaging, productName) {
-  // Ready-Mix Color and PickleMaster RTU with 5-gal pails use 24 OZ Jars
-  if (parseInt(packaging) === 5 && (productName === 'Ready-Mix Color' || productName === 'PickleMaster RTU')) {
+  // Ready Mix and PickleMaster RTU with 5-gal pails use 24 OZ Jars
+  if (parseInt(packaging) === 5 && (productName === 'Ready Mix' || productName === 'PickleMaster RTU')) {
     return '24 OZ Jar(s)';
   }
   if (parseInt(packaging) === 5) {
@@ -397,9 +401,9 @@ function calculate(inputs) {
       const gallons = calcGallons(rate, zone.sqyd, coats);
       const packages = calcPackages(gallons, pkgSize);
 
-      // For PickleMaster RTU and Ready-Mix Color, packaging is always 5-gal pails
-      const effectivePkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color') ? 5 : pkgSize;
-      const effectivePackages = (prodName === 'PickleMaster RTU' || prodName === 'Ready-Mix Color')
+      // For PickleMaster RTU and Ready Mix, packaging is always 5-gal pails
+      const effectivePkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix') ? 5 : pkgSize;
+      const effectivePackages = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix')
         ? calcPackages(gallons, 5)
         : packages;
 
@@ -426,7 +430,7 @@ function calculate(inputs) {
 
       // ColorPlus tinting
       if (colorName !== 'Not Selected') {
-        const cpCount = getColorPlusCount(effectivePackages, packaging);
+        const cpCount = getColorPlusCount(effectivePackages, packaging, prodName);
         const cpUnit = getColorPlusUnit(packaging, prodName);
         const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
         if (cpCount > 0) {
