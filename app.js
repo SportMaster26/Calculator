@@ -240,7 +240,7 @@ function getPackageSize(packaging) {
 
 function calcGallons(coverageRate, areaSqYd, coats) {
   if (!coverageRate || !areaSqYd || !coats) return 0;
-  return Math.ceil(coverageRate * areaSqYd * coats);
+  return coverageRate * areaSqYd * coats;
 }
 
 function calcPackages(gallons, packageSize) {
