@@ -417,8 +417,10 @@ function getColorSandLbs(packages, packaging) {
 }
 
 function getColorPlusCount(packages, packaging, mixType) {
-  const mult5 = (mixType === 'concentrate') ? 2 : 1;
-  const mult = { 5: mult5, 30: 2, 55: 4 }[packaging] || 0;
+  if (parseInt(packaging) === 5) {
+    return (mixType === 'concentrate') ? 2 : 1;
+  }
+  const mult = { 30: 2, 55: 4 }[packaging] || 0;
   return packages * mult;
 }
 
