@@ -75,6 +75,19 @@
         </div>
       </section>
 
+      <!-- ─── Court Designer Modal ─── -->
+      <div id="courtDesignerOverlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Court Designer Preview">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Court Designer Preview</h2>
+            <button type="button" id="closeDesignerBtn" class="btn btn-close" aria-label="Close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div id="courtDesignerContainer"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- ─── Summary ─── -->
       <section class="card" aria-label="Summary">
         <h2>Summary</h2>
@@ -784,6 +797,7 @@ function createCourtEntry() {
       </label>
     </div>
     <div class="zone-colors-row form-row"></div>
+    <button type="button" class="btn btn-preview" data-preview="${id}">Preview Court</button>
   `;
 
   // Event listeners
@@ -807,6 +821,11 @@ function createCourtEntry() {
 
   removeBtn.addEventListener('click', () => {
     removeCourtEntry(id);
+  });
+
+  const previewBtn = div.querySelector('.btn-preview');
+  previewBtn.addEventListener('click', () => {
+    openCourtDesigner(id);
   });
 
   // Listen on value inputs
@@ -1117,6 +1136,289 @@ function render() {
 function renderNote() {
   $('noteText').textContent = 'Make sure to check Industry Standard Courts for proper dimensions and follow ASBA for Overrun requirements.';
 }
+
+// ────────────────────────────────────────────────────────
+// COURT DESIGNER — SVG Preview
+// ────────────────────────────────────────────────────────
+
+const colorHexMap = {
+  'Not Selected':                  '#C8C8C8',
+  'Forest Green ColorPlus':        '#2E6B35',
+  'Light Green ColorPlus':         '#6BAF5B',
+  'Dark Green ColorPlus':          '#1B5E20',
+  'Beige ColorPlus':               '#C8AD7F',
+  'Red ColorPlus':                 '#B71C1C',
+  'Maroon ColorPlus':              '#6D1B1B',
+  'Tournament Purple ColorPlus':   '#5E2D91',
+  'Gray ColorPlus':                '#757575',
+  'Blue ColorPlus':                '#1565C0',
+  'Light Blue ColorPlus':          '#42A5F5',
+  'Dove Gray ColorPlus':           '#9E9E9E',
+  'Ice Blue ColorPlus':            '#81D4FA',
+  'Sandstone ColorPlus':           '#C2956B',
+  'Orange ColorPlus':              '#E65100',
+  'Yellow ColorPlus':              '#F9A825',
+  'Brite Red ColorPlus':           '#FF1744',
+  'Black Dispersion ColorPlus':    '#212121'
+};
+
+function getColorHex(colorName) {
+  return colorHexMap[colorName] || '#C8C8C8';
+}
+
+function openCourtDesigner(entryId) {
+  const entry = courtEntries.find(e => e.id === entryId);
+  if (!entry) return;
+  const el = entry.el;
+  const courtType = el.querySelector('.ce-courtType').value;
+  const colorSelects = el.querySelectorAll('.zone-color-select');
+  const zoneColors = Array.from(colorSelects).map(s => s.value);
+
+  const container = $('courtDesignerContainer');
+  container.innerHTML = '';
+
+  const svg = buildCourtSVG(courtType, zoneColors);
+  container.innerHTML = svg;
+
+  // Build legend
+  const def = courtDefs[courtType];
+  let legendHtml = '<div class="court-legend">';
+  def.zones.forEach((zone, i) => {
+    const colorName = zoneColors[i] || 'Not Selected';
+    const hex = getColorHex(colorName);
+    const displayColor = colorName === 'Not Selected' ? 'Not Selected' : colorName.replace(' ColorPlus', '');
+    legendHtml += `<div class="legend-item">
+      <span class="legend-swatch" style="background:${hex}"></span>
+      <span class="legend-label">${zone.name}: ${displayColor}</span>
+    </div>`;
+  });
+  legendHtml += '</div>';
+  container.innerHTML += legendHtml;
+
+  $('courtDesignerOverlay').classList.remove('hidden');
+}
+
+function closeCourtDesigner() {
+  $('courtDesignerOverlay').classList.add('hidden');
+}
+
+function buildCourtSVG(courtType, zoneColors) {
+  switch (courtType) {
+    case 'tennis':       return buildTennisSVG(zoneColors);
+    case 'pickleball':   return buildPickleballSVG(zoneColors);
+    case 'basketballFull': return buildBasketballFullSVG(zoneColors);
+    case 'basketballHalf': return buildBasketballHalfSVG(zoneColors);
+    case 'totalArea':    return buildTotalAreaSVG(zoneColors);
+    default:             return '<p>No preview available</p>';
+  }
+}
+
+function buildTennisSVG(zoneColors) {
+  // Zones: 0=Outside Area, 1=Playing Area
+  const outsideColor = getColorHex(zoneColors[0] || 'Not Selected');
+  const playingColor = getColorHex(zoneColors[1] || 'Not Selected');
+
+  // Court: 60ft wide x 120ft long total area, playing area 36x78 centered
+  const W = 600, H = 400;
+  const courtW = 360, courtH = 312; // scaled: 36->360, 78->312 (x4 scale)
+  const cx = W / 2, cy = H / 2;
+  const lx = cx - courtW / 2, ly = cy - courtH / 2;
+  const lw = 2;
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
+    <!-- Outside Area -->
+    <rect x="0" y="0" width="${W}" height="${H}" fill="${outsideColor}" rx="4"/>
+    <!-- Playing Area -->
+    <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="${playingColor}"/>
+    <!-- Outer boundary lines -->
+    <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <!-- Net (center horizontal) -->
+    <line x1="${lx - 20}" y1="${cy}" x2="${lx + courtW + 20}" y2="${cy}" stroke="white" stroke-width="3"/>
+    <!-- Singles sidelines (4.5ft in from each side = 18px) -->
+    <line x1="${lx + 18}" y1="${ly}" x2="${lx + 18}" y2="${ly + courtH}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${lx + courtW - 18}" y1="${ly}" x2="${lx + courtW - 18}" y2="${ly + courtH}" stroke="white" stroke-width="${lw}"/>
+    <!-- Service lines (21ft from net = 84px each side) -->
+    <line x1="${lx + 18}" y1="${cy - 84}" x2="${lx + courtW - 18}" y2="${cy - 84}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${lx + 18}" y1="${cy + 84}" x2="${lx + courtW - 18}" y2="${cy + 84}" stroke="white" stroke-width="${lw}"/>
+    <!-- Center service line -->
+    <line x1="${cx}" y1="${cy - 84}" x2="${cx}" y2="${cy + 84}" stroke="white" stroke-width="${lw}"/>
+    <!-- Center marks on baselines -->
+    <line x1="${cx}" y1="${ly}" x2="${cx}" y2="${ly + 12}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${cx}" y1="${ly + courtH - 12}" x2="${cx}" y2="${ly + courtH}" stroke="white" stroke-width="${lw}"/>
+  </svg>`;
+}
+
+function buildPickleballSVG(zoneColors) {
+  // Zones: 0=Total Area, 1=Service Area, 2=Kitchen Area
+  const totalColor = getColorHex(zoneColors[0] || 'Not Selected');
+  const serviceColor = getColorHex(zoneColors[1] || 'Not Selected');
+  const kitchenColor = getColorHex(zoneColors[2] || 'Not Selected');
+
+  // Court: 30x60 total, playing 20x44, kitchen 20x14 (7ft each side of net)
+  const W = 500, H = 400;
+  const scale = 6;
+  const playW = 20 * scale, playH = 44 * scale; // 120 x 264
+  const cx = W / 2, cy = H / 2;
+  const lx = cx - playW / 2, ly = cy - playH / 2;
+  const kitchenH = 7 * scale; // 42px each side
+  const lw = 2;
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
+    <!-- Total Area background -->
+    <rect x="0" y="0" width="${W}" height="${H}" fill="${totalColor}" rx="4"/>
+    <!-- Service Areas (top half and bottom half minus kitchen) -->
+    <rect x="${lx}" y="${ly}" width="${playW}" height="${playH / 2 - kitchenH}" fill="${serviceColor}"/>
+    <rect x="${lx}" y="${cy + kitchenH}" width="${playW}" height="${playH / 2 - kitchenH}" fill="${serviceColor}"/>
+    <!-- Kitchen / Non-Volley Zone -->
+    <rect x="${lx}" y="${cy - kitchenH}" width="${playW}" height="${kitchenH * 2}" fill="${kitchenColor}"/>
+    <!-- Court outline -->
+    <rect x="${lx}" y="${ly}" width="${playW}" height="${playH}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <!-- Net -->
+    <line x1="${lx - 10}" y1="${cy}" x2="${lx + playW + 10}" y2="${cy}" stroke="white" stroke-width="3"/>
+    <!-- Kitchen lines -->
+    <line x1="${lx}" y1="${cy - kitchenH}" x2="${lx + playW}" y2="${cy - kitchenH}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${lx}" y1="${cy + kitchenH}" x2="${lx + playW}" y2="${cy + kitchenH}" stroke="white" stroke-width="${lw}"/>
+    <!-- Center service lines -->
+    <line x1="${cx}" y1="${ly}" x2="${cx}" y2="${cy - kitchenH}" stroke="white" stroke-width="${lw}"/>
+    <line x1="${cx}" y1="${cy + kitchenH}" x2="${cx}" y2="${ly + playH}" stroke="white" stroke-width="${lw}"/>
+  </svg>`;
+}
+
+function buildBasketballFullSVG(zoneColors) {
+  // Zones: 0=Court, 1=Border, 2=Three Point Area, 3=Key, 4=Free Throw Circle, 5=Center Court Circle
+  const courtColor = getColorHex(zoneColors[0] || 'Not Selected');
+  const borderColor = getColorHex(zoneColors[1] || 'Not Selected');
+  const threeColor = getColorHex(zoneColors[2] || 'Not Selected');
+  const keyColor = getColorHex(zoneColors[3] || 'Not Selected');
+  const ftCircleColor = getColorHex(zoneColors[4] || 'Not Selected');
+  const centerColor = getColorHex(zoneColors[5] || 'Not Selected');
+
+  const W = 700, H = 400;
+  const courtW = 588, courtH = 350; // 84x50 scaled by 7
+  const cx = W / 2, cy = H / 2;
+  const lx = (W - courtW) / 2, ly = (H - courtH) / 2;
+  const lw = 2;
+  // Key: 12ft wide x 19ft long = 84x133
+  const keyW = 84, keyH = 133;
+  // Three-point arc radius: ~23.75ft = 166px, but we'll draw a stylized version
+  const arcR = 140;
+  // Free throw circle radius: 6ft = 42px
+  const ftR = 42;
+  // Center circle radius: 6ft = 42px
+  const ccR = 42;
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
+    <!-- Border -->
+    <rect x="0" y="0" width="${W}" height="${H}" fill="${borderColor}" rx="4"/>
+    <!-- Main Court -->
+    <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="${courtColor}"/>
+
+    <!-- LEFT SIDE -->
+    <!-- Three Point Area (left) -->
+    <clipPath id="threeLeftClip"><rect x="${lx}" y="${ly}" width="${courtW / 2}" height="${courtH}"/></clipPath>
+    <ellipse cx="${lx + 2}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="${threeColor}" clip-path="url(#threeLeftClip)"/>
+    <!-- Key (left) -->
+    <rect x="${lx}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="${keyColor}"/>
+    <!-- Free Throw Circle (left) -->
+    <circle cx="${lx + keyH}" cy="${cy}" r="${ftR}" fill="${ftCircleColor}"/>
+    <!-- Key + FT outlines -->
+    <rect x="${lx}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <circle cx="${lx + keyH}" cy="${cy}" r="${ftR}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <!-- Three point arc outline (left) -->
+    <ellipse cx="${lx + 2}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#threeLeftClip)"/>
+    <!-- Backboard & rim (left) -->
+    <line x1="${lx + 28}" y1="${cy - 14}" x2="${lx + 28}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
+    <circle cx="${lx + 38}" cy="${cy}" r="10" fill="none" stroke="white" stroke-width="${lw}"/>
+
+    <!-- RIGHT SIDE -->
+    <clipPath id="threeRightClip"><rect x="${lx + courtW / 2}" y="${ly}" width="${courtW / 2}" height="${courtH}"/></clipPath>
+    <ellipse cx="${lx + courtW - 2}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="${threeColor}" clip-path="url(#threeRightClip)"/>
+    <!-- Key (right) -->
+    <rect x="${lx + courtW - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="${keyColor}"/>
+    <!-- Free Throw Circle (right) -->
+    <circle cx="${lx + courtW - keyH}" cy="${cy}" r="${ftR}" fill="${ftCircleColor}"/>
+    <!-- Key + FT outlines -->
+    <rect x="${lx + courtW - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <circle cx="${lx + courtW - keyH}" cy="${cy}" r="${ftR}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <!-- Three point arc outline (right) -->
+    <ellipse cx="${lx + courtW - 2}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#threeRightClip)"/>
+    <!-- Backboard & rim (right) -->
+    <line x1="${lx + courtW - 28}" y1="${cy - 14}" x2="${lx + courtW - 28}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
+    <circle cx="${lx + courtW - 38}" cy="${cy}" r="10" fill="none" stroke="white" stroke-width="${lw}"/>
+
+    <!-- Center Court -->
+    <circle cx="${cx}" cy="${cy}" r="${ccR}" fill="${centerColor}"/>
+    <circle cx="${cx}" cy="${cy}" r="${ccR}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <!-- Half court line -->
+    <line x1="${cx}" y1="${ly}" x2="${cx}" y2="${ly + courtH}" stroke="white" stroke-width="${lw}"/>
+    <!-- Court outline -->
+    <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="none" stroke="white" stroke-width="${lw}"/>
+  </svg>`;
+}
+
+function buildBasketballHalfSVG(zoneColors) {
+  // Zones: 0=Court, 1=Border, 2=Three Point Area, 3=Key, 4=Free Throw Circle
+  const courtColor = getColorHex(zoneColors[0] || 'Not Selected');
+  const borderColor = getColorHex(zoneColors[1] || 'Not Selected');
+  const threeColor = getColorHex(zoneColors[2] || 'Not Selected');
+  const keyColor = getColorHex(zoneColors[3] || 'Not Selected');
+  const ftCircleColor = getColorHex(zoneColors[4] || 'Not Selected');
+
+  const W = 500, H = 400;
+  const courtW = 329, courtH = 350; // 47x50 scaled by 7
+  const cx = W / 2, cy = H / 2;
+  const lx = (W - courtW) / 2, ly = (H - courtH) / 2;
+  const lw = 2;
+  const keyW = 84, keyH = 133;
+  const arcR = 140;
+  const ftR = 42;
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
+    <!-- Border -->
+    <rect x="0" y="0" width="${W}" height="${H}" fill="${borderColor}" rx="4"/>
+    <!-- Main Court -->
+    <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="${courtColor}"/>
+
+    <!-- Three Point Area -->
+    <clipPath id="threeHalfClip"><rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}"/></clipPath>
+    <ellipse cx="${lx + courtW}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="${threeColor}" clip-path="url(#threeHalfClip)"/>
+    <!-- Key -->
+    <rect x="${lx + courtW - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="${keyColor}"/>
+    <!-- Free Throw Circle -->
+    <circle cx="${lx + courtW - keyH}" cy="${cy}" r="${ftR}" fill="${ftCircleColor}"/>
+    <!-- Outlines -->
+    <rect x="${lx + courtW - keyH}" y="${cy - keyW / 2}" width="${keyH}" height="${keyW}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <circle cx="${lx + courtW - keyH}" cy="${cy}" r="${ftR}" fill="none" stroke="white" stroke-width="${lw}"/>
+    <ellipse cx="${lx + courtW}" cy="${cy}" rx="${arcR}" ry="${arcR}" fill="none" stroke="white" stroke-width="${lw}" clip-path="url(#threeHalfClip)"/>
+    <!-- Backboard & rim -->
+    <line x1="${lx + courtW - 28}" y1="${cy - 14}" x2="${lx + courtW - 28}" y2="${cy + 14}" stroke="white" stroke-width="3"/>
+    <circle cx="${lx + courtW - 38}" cy="${cy}" r="10" fill="none" stroke="white" stroke-width="${lw}"/>
+    <!-- Court outline -->
+    <rect x="${lx}" y="${ly}" width="${courtW}" height="${courtH}" fill="none" stroke="white" stroke-width="${lw}"/>
+  </svg>`;
+}
+
+function buildTotalAreaSVG(zoneColors) {
+  const areaColor = getColorHex(zoneColors[0] || 'Not Selected');
+  const W = 500, H = 350;
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="court-svg" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="20" width="${W - 40}" height="${H - 40}" fill="${areaColor}" rx="6"/>
+    <rect x="20" y="20" width="${W - 40}" height="${H - 40}" fill="none" stroke="white" stroke-width="2" rx="6"/>
+    <text x="${W / 2}" y="${H / 2}" text-anchor="middle" dominant-baseline="central" fill="white" font-size="24" font-weight="bold" opacity="0.7">Custom Area</text>
+  </svg>`;
+}
+
+// ── Modal close handlers ──
+document.addEventListener('DOMContentLoaded', () => {
+  $('closeDesignerBtn').addEventListener('click', closeCourtDesigner);
+  $('courtDesignerOverlay').addEventListener('click', (e) => {
+    if (e.target === $('courtDesignerOverlay')) closeCourtDesigner();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCourtDesigner();
+  });
+});
 
 // ── Initialize ──
 function init() {
