@@ -107,7 +107,7 @@ const crackFillers = [
 const courtDefs = {
   tennis: {
     label: 'Tennis Court',
-    defaultWidth: 36, defaultLength: 78,
+    defaultWidth: 60, defaultLength: 120,
     zones: [
       { name: 'Outside Area', sqftPerCourt: null },
       { name: 'Playing Area', sqftPerCourt: 2808 }
