@@ -482,20 +482,21 @@ function renderCourtPreview(courtType, zoneColors) {
 
 function renderTennisPreview(c) {
   // c[0] = Outside Area, c[1] = Playing Area
+  // Standard: 120x60 total (21ft run-back + 12ft run-side), 78x36 playing surface
   const out = c[0] || '#d5d5d5';
   const play = c[1] || '#d5d5d5';
-  return `<svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" class="court-svg">
-    <rect x="0" y="0" width="300" height="160" fill="${out}" rx="3"/>
-    <rect x="52" y="22" width="196" height="116" fill="${play}"/>
-    <rect x="52" y="22" width="196" height="116" fill="none" stroke="#fff" stroke-width="2"/>
-    <line x1="52" y1="37" x2="248" y2="37" stroke="#fff" stroke-width="1"/>
-    <line x1="52" y1="123" x2="248" y2="123" stroke="#fff" stroke-width="1"/>
-    <line x1="150" y1="19" x2="150" y2="141" stroke="#fff" stroke-width="1.5" stroke-dasharray="4,3"/>
-    <line x1="98" y1="37" x2="98" y2="123" stroke="#fff" stroke-width="1.5"/>
-    <line x1="202" y1="37" x2="202" y2="123" stroke="#fff" stroke-width="1.5"/>
-    <line x1="98" y1="80" x2="202" y2="80" stroke="#fff" stroke-width="1.5"/>
-    <line x1="52" y1="80" x2="58" y2="80" stroke="#fff" stroke-width="1.5"/>
-    <line x1="242" y1="80" x2="248" y2="80" stroke="#fff" stroke-width="1.5"/>
+  return `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg" class="court-svg">
+    <rect x="0" y="0" width="300" height="150" fill="${out}" rx="3"/>
+    <rect x="52.5" y="30" width="195" height="90" fill="${play}"/>
+    <rect x="52.5" y="30" width="195" height="90" fill="none" stroke="#fff" stroke-width="2"/>
+    <line x1="52.5" y1="41" x2="247.5" y2="41" stroke="#fff" stroke-width="1"/>
+    <line x1="52.5" y1="109" x2="247.5" y2="109" stroke="#fff" stroke-width="1"/>
+    <line x1="150" y1="27" x2="150" y2="123" stroke="#fff" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <line x1="97.5" y1="41" x2="97.5" y2="109" stroke="#fff" stroke-width="1.5"/>
+    <line x1="202.5" y1="41" x2="202.5" y2="109" stroke="#fff" stroke-width="1.5"/>
+    <line x1="97.5" y1="75" x2="202.5" y2="75" stroke="#fff" stroke-width="1.5"/>
+    <line x1="52.5" y1="75" x2="56" y2="75" stroke="#fff" stroke-width="1.5"/>
+    <line x1="244" y1="75" x2="247.5" y2="75" stroke="#fff" stroke-width="1.5"/>
   </svg>`;
 }
 
