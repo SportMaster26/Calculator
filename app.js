@@ -77,23 +77,25 @@ const colorOptions = [
 // ── Color hex map for SVG previews ──
 const colorHexMap = {
   'Not Selected': '#d5d5d5',
-  'Forest Green ColorPlus': '#228B22',
-  'Light Green ColorPlus': '#7CCD7C',
-  'Dark Green ColorPlus': '#006400',
-  'Beige ColorPlus': '#D2B48C',
-  'Red ColorPlus': '#CC0000',
-  'Maroon ColorPlus': '#800000',
-  'Tournament Purple ColorPlus': '#6A0DAD',
-  'Gray ColorPlus': '#808080',
-  'Blue ColorPlus': '#1A5CBA',
-  'Light Blue ColorPlus': '#87CEEB',
-  'Dove Gray ColorPlus': '#B0B0B0',
-  'Ice Blue ColorPlus': '#B0D4E8',
-  'Sandstone ColorPlus': '#C2B280',
-  'Orange ColorPlus': '#FF8C00',
-  'Yellow ColorPlus': '#FFD700',
-  'Brite Red ColorPlus': '#FF2020',
-  'Black Dispersion ColorPlus': '#222222'
+  'Forest Green ColorPlus': '#48543A',
+  'Light Green ColorPlus': '#445E34',
+  'Dark Green ColorPlus': '#3B4133',
+  'Beige ColorPlus': '#806D59',
+  'Red ColorPlus': '#6B3736',
+  'Maroon ColorPlus': '#5A3A3A',
+  'Tournament Purple ColorPlus': '#403A5F',
+  'Gray ColorPlus': '#6D6D74',
+  'Blue ColorPlus': '#2D3B5B',
+  'Light Blue ColorPlus': '#486186',
+  'Dove Gray ColorPlus': '#969696',
+  'Ice Blue ColorPlus': '#7FB3D1',
+  'Sandstone ColorPlus': '#B7A26E',
+  'Orange ColorPlus': '#DD5D36',
+  'Yellow ColorPlus': '#E4BD43',
+  'Brite Red ColorPlus': '#C3332A',
+  'Black Dispersion ColorPlus': '#111111',
+  'Brown ColorPlus': '#42312D',
+  'Bright Red ColorPlus': '#C3332A'
 };
 
 // ── Crack filler reference ──
