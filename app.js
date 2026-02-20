@@ -842,7 +842,7 @@ function renderCrackFillers() {
 
 function updateCrackFillerVisibility() {
   const surfaceType = $('surfaceType').value;
-  const show = surfaceType === 'existingConcrete' || surfaceType === 'existingAsphalt';
+  const show = surfaceType === 'concrete' || surfaceType === 'existingConcrete' || surfaceType === 'existingAsphalt';
   $('crackFillerSection').classList.toggle('hidden', !show);
 }
 
