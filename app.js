@@ -488,32 +488,34 @@ function renderTennisPreview(c) {
     <rect x="0" y="0" width="300" height="160" fill="${out}" rx="3"/>
     <rect x="52" y="22" width="196" height="116" fill="${play}"/>
     <rect x="52" y="22" width="196" height="116" fill="none" stroke="#fff" stroke-width="2"/>
+    <line x1="52" y1="37" x2="248" y2="37" stroke="#fff" stroke-width="1"/>
+    <line x1="52" y1="123" x2="248" y2="123" stroke="#fff" stroke-width="1"/>
     <line x1="150" y1="19" x2="150" y2="141" stroke="#fff" stroke-width="1.5" stroke-dasharray="4,3"/>
-    <line x1="98" y1="22" x2="98" y2="138" stroke="#fff" stroke-width="1.5"/>
-    <line x1="202" y1="22" x2="202" y2="138" stroke="#fff" stroke-width="1.5"/>
-    <line x1="98" y1="80" x2="150" y2="80" stroke="#fff" stroke-width="1.5"/>
-    <line x1="150" y1="80" x2="202" y2="80" stroke="#fff" stroke-width="1.5"/>
-    <line x1="52" y1="80" x2="60" y2="80" stroke="#fff" stroke-width="1.5"/>
-    <line x1="240" y1="80" x2="248" y2="80" stroke="#fff" stroke-width="1.5"/>
+    <line x1="98" y1="37" x2="98" y2="123" stroke="#fff" stroke-width="1.5"/>
+    <line x1="202" y1="37" x2="202" y2="123" stroke="#fff" stroke-width="1.5"/>
+    <line x1="98" y1="80" x2="202" y2="80" stroke="#fff" stroke-width="1.5"/>
+    <line x1="52" y1="80" x2="58" y2="80" stroke="#fff" stroke-width="1.5"/>
+    <line x1="242" y1="80" x2="248" y2="80" stroke="#fff" stroke-width="1.5"/>
   </svg>`;
 }
 
 function renderPickleballPreview(c) {
   // c[0] = Total Area, c[1] = Service Area, c[2] = Kitchen Area
+  // Real proportions: 44ft total (15ft service + 7ft kitchen + 7ft kitchen + 15ft service)
   const total = c[0] || '#d5d5d5';
   const service = c[1] || '#d5d5d5';
   const kitchen = c[2] || '#d5d5d5';
   return `<svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg" class="court-svg">
     <rect x="0" y="0" width="300" height="180" fill="${total}" rx="3"/>
-    <rect x="50" y="20" width="200" height="60" fill="${service}"/>
-    <rect x="50" y="100" width="200" height="60" fill="${service}"/>
-    <rect x="50" y="80" width="200" height="20" fill="${kitchen}"/>
+    <rect x="50" y="20" width="200" height="48" fill="${service}"/>
+    <rect x="50" y="112" width="200" height="48" fill="${service}"/>
+    <rect x="50" y="68" width="200" height="44" fill="${kitchen}"/>
     <rect x="50" y="20" width="200" height="140" fill="none" stroke="#fff" stroke-width="2"/>
-    <line x1="50" y1="80" x2="250" y2="80" stroke="#fff" stroke-width="1.5"/>
-    <line x1="50" y1="100" x2="250" y2="100" stroke="#fff" stroke-width="1.5"/>
-    <line x1="150" y1="20" x2="150" y2="80" stroke="#fff" stroke-width="1.5"/>
-    <line x1="150" y1="100" x2="150" y2="160" stroke="#fff" stroke-width="1.5"/>
+    <line x1="50" y1="68" x2="250" y2="68" stroke="#fff" stroke-width="1.5"/>
+    <line x1="50" y1="112" x2="250" y2="112" stroke="#fff" stroke-width="1.5"/>
     <line x1="50" y1="90" x2="250" y2="90" stroke="#fff" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="150" y1="20" x2="150" y2="68" stroke="#fff" stroke-width="1.5"/>
+    <line x1="150" y1="112" x2="150" y2="160" stroke="#fff" stroke-width="1.5"/>
   </svg>`;
 }
 
@@ -530,13 +532,17 @@ function renderBasketballFullPreview(c) {
     <rect x="25" y="15" width="290" height="170" fill="${court}"/>
     <rect x="25" y="15" width="290" height="170" fill="none" stroke="#fff" stroke-width="2"/>
     <line x1="170" y1="15" x2="170" y2="185" stroke="#fff" stroke-width="1.5"/>
-    <path d="M 25,50 A 55,55 0 0,1 80,100 A 55,55 0 0,1 25,150" fill="${three}" stroke="#fff" stroke-width="1.5"/>
-    <path d="M 315,50 A 55,55 0 0,0 260,100 A 55,55 0 0,0 315,150" fill="${three}" stroke="#fff" stroke-width="1.5"/>
-    <rect x="25" y="65" width="55" height="70" fill="${key}" stroke="#fff" stroke-width="1.5"/>
-    <rect x="260" y="65" width="55" height="70" fill="${key}" stroke="#fff" stroke-width="1.5"/>
+    <path d="M 25,30 L 58,30 A 58,70 0 0,1 58,170 L 25,170 Z" fill="${three}" stroke="#fff" stroke-width="1.5"/>
+    <path d="M 315,30 L 282,30 A 58,70 0 0,0 282,170 L 315,170 Z" fill="${three}" stroke="#fff" stroke-width="1.5"/>
+    <rect x="25" y="62" width="55" height="76" fill="${key}" stroke="#fff" stroke-width="1.5"/>
+    <rect x="260" y="62" width="55" height="76" fill="${key}" stroke="#fff" stroke-width="1.5"/>
     <circle cx="80" cy="100" r="18" fill="${ft}" stroke="#fff" stroke-width="1.5"/>
     <circle cx="260" cy="100" r="18" fill="${ft}" stroke="#fff" stroke-width="1.5"/>
     <circle cx="170" cy="100" r="18" fill="${center}" stroke="#fff" stroke-width="1.5"/>
+    <line x1="33" y1="92" x2="33" y2="108" stroke="#fff" stroke-width="2"/>
+    <circle cx="38" cy="100" r="4" fill="none" stroke="#fff" stroke-width="1.2"/>
+    <line x1="307" y1="92" x2="307" y2="108" stroke="#fff" stroke-width="2"/>
+    <circle cx="302" cy="100" r="4" fill="none" stroke="#fff" stroke-width="1.2"/>
   </svg>`;
 }
 
@@ -551,10 +557,12 @@ function renderBasketballHalfPreview(c) {
     <rect x="0" y="0" width="220" height="200" fill="${border}" rx="3"/>
     <rect x="15" y="15" width="190" height="170" fill="${court}"/>
     <rect x="15" y="15" width="190" height="170" fill="none" stroke="#fff" stroke-width="2"/>
-    <path d="M 15,45 A 60,60 0 0,1 75,100 A 60,60 0 0,1 15,155" fill="${three}" stroke="#fff" stroke-width="1.5"/>
-    <rect x="15" y="65" width="60" height="70" fill="${key}" stroke="#fff" stroke-width="1.5"/>
-    <circle cx="75" cy="100" r="18" fill="${ft}" stroke="#fff" stroke-width="1.5"/>
+    <path d="M 15,30 L 48,30 A 58,70 0 0,1 48,170 L 15,170 Z" fill="${three}" stroke="#fff" stroke-width="1.5"/>
+    <rect x="15" y="62" width="55" height="76" fill="${key}" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="70" cy="100" r="18" fill="${ft}" stroke="#fff" stroke-width="1.5"/>
     <line x1="205" y1="15" x2="205" y2="185" stroke="#fff" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="23" y1="92" x2="23" y2="108" stroke="#fff" stroke-width="2"/>
+    <circle cx="28" cy="100" r="4" fill="none" stroke="#fff" stroke-width="1.2"/>
   </svg>`;
 }
 
