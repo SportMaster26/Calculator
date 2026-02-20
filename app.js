@@ -98,9 +98,9 @@ const colorHexMap = {
 
 // ── Crack filler reference ──
 const crackFillers = [
-  { product: 'Acrylic Crack Patch', rate: '75 - 150 feet of Cracks', width: 'For Cracks up to 1" wide' },
-  { product: 'CrackMagic', rate: '75 - 150 feet of Cracks', width: 'For Cracks up to 1/2" wide' },
-  { product: 'CourtFlex', rate: '150 - 200 feet of Cracks', width: 'For Cracks up to 1/2" wide' }
+  { product: 'Acrylic Crack Patch', rateLabel: '75 - 150 feet of Cracks', rateMin: 75, rateMax: 150, width: 'For Cracks up to 1" wide' },
+  { product: 'CrackMagic', rateLabel: '75 - 150 feet of Cracks', rateMin: 75, rateMax: 150, width: 'For Cracks up to 1/2" wide' },
+  { product: 'CourtFlex', rateLabel: '150 - 200 feet of Cracks', rateMin: 150, rateMax: 200, width: 'For Cracks up to 1/2" wide' }
 ];
 
 // ── Court type zone definitions ──
@@ -828,9 +828,22 @@ function renderResults() {
 }
 
 function renderCrackFillers() {
-  $('crackBody').innerHTML = crackFillers.map(f => `
-    <tr><td>${f.product}</td><td>${f.rate}</td><td>${f.width}</td></tr>
-  `).join('');
+  const linearFeet = parseFloat($('crackLinearFeet').value) || 0;
+  $('crackBody').innerHTML = crackFillers.map(f => {
+    let estimate = '—';
+    if (linearFeet > 0) {
+      // Use the conservative rate (rateMin = fewer feet per gallon → more gallons needed)
+      const gallons = Math.ceil(linearFeet / f.rateMin);
+      estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
+    }
+    return `<tr><td>${f.product}</td><td>${f.rateLabel}</td><td>${f.width}</td><td>${estimate}</td></tr>`;
+  }).join('');
+}
+
+function updateCrackFillerVisibility() {
+  const surfaceType = $('surfaceType').value;
+  const show = surfaceType === 'existingConcrete' || surfaceType === 'existingAsphalt';
+  $('crackFillerSection').classList.toggle('hidden', !show);
 }
 
 // ── Initialize ──
@@ -838,6 +851,7 @@ function init() {
   // Start with one tennis court entry
   courtEntries.push(createEntry('tennis'));
   renderCourtEntries();
+  updateCrackFillerVisibility();
   renderCrackFillers();
   $('noteText').textContent = 'Make sure to check Industry Standard Courts for proper dimensions and follow ASBA for Overrun requirements.';
   renderResults();
@@ -853,6 +867,12 @@ function init() {
   for (const id of ['surfaceType', 'packaging', 'mixType']) {
     $(id).addEventListener('change', renderResults);
   }
+
+  // Surface type change → show/hide crack filler section
+  $('surfaceType').addEventListener('change', updateCrackFillerVisibility);
+
+  // Linear feet input → recalculate crack filler estimates
+  $('crackLinearFeet').addEventListener('input', renderCrackFillers);
 }
 
 init();
