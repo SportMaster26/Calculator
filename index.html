@@ -69,13 +69,19 @@
         </table>
       </section>
 
-      <!-- ─── Crack Filler Guidance ─── -->
-      <section class="card" aria-label="Crack Filler">
-        <h2>Crack Filler Guidance</h2>
+      <!-- ─── Crack Filler ─── -->
+      <section class="card hidden" id="crackFillerSection" aria-label="Crack Filler">
+        <h2>Crack Filler</h2>
         <p class="disclaimer">These coverage rates may vary depending on width as well as depth of the cracks.</p>
+        <div class="form-row" style="margin-bottom:16px;">
+          <label>
+            <span>Linear Feet of Cracks</span>
+            <input type="number" id="crackLinearFeet" min="0" step="1" value="0" style="max-width:200px;">
+          </label>
+        </div>
         <table>
           <thead>
-            <tr><th>Product</th><th>Linear Feet / Gallon</th><th>Recommended Width</th></tr>
+            <tr><th>Product</th><th>Linear Ft / Gallon</th><th>Recommended Width</th><th>Gallons Needed (Est.)</th></tr>
           </thead>
           <tbody id="crackBody"></tbody>
         </table>
