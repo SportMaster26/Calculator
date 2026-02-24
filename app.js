@@ -358,9 +358,10 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       }
 
       if (colorName !== 'Not Selected') {
-        const cpCount = getColorPlusCount(effectivePackages, packaging, prodName);
-        const cpUnit = getColorPlusUnit(packaging, prodName);
-        const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
+        const cpPkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix') ? '5' : packaging;
+        const cpCount = getColorPlusCount(effectivePackages, cpPkg, prodName);
+        const cpUnit = getColorPlusUnit(cpPkg, prodName);
+        const cpItem = getColorPlusItemNumber(colorName, cpPkg, prodName);
         if (cpCount > 0) {
           zoneResult.products.push({
             product: colorName, coats: '', gallons: '',
