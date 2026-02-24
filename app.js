@@ -231,6 +231,17 @@ function getPackageSize(packaging) {
   return parseInt(packaging, 10);
 }
 
+function getPackageLabel(packaging) {
+  const size = getPackageSize(packaging);
+  if (size === 55) return '55 Gallon Drum(s)';
+  if (size === 30) return '30 Gallon Keg(s)';
+  return '5 Gallon Pail(s)';
+}
+
+function fmtPkg(count, packaging) {
+  return count + ' - ' + getPackageLabel(packaging);
+}
+
 function calcGallons(coverageRate, areaSqYd, coats) {
   if (!coverageRate || !areaSqYd || !coats) return 0;
   return Math.ceil(coverageRate * areaSqYd * coats);
@@ -326,13 +337,14 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       const gallons = calcGallons(rate, zone.sqyd, coats);
       const packages = calcPackages(gallons, pkgSize);
 
-      const effectivePkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix') ? 5 : pkgSize;
+      const effectivePkgKey = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix') ? '5' : packaging;
+      const effectivePkgSize = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix') ? 5 : pkgSize;
       const effectivePackages = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix')
         ? calcPackages(gallons, 5) : packages;
 
       zoneResult.products.push({
         product: prodName, coats, gallons,
-        packaging: effectivePackages + ' x ' + effectivePkg + ' Gal',
+        packaging: fmtPkg(effectivePackages, effectivePkgKey),
         item: getItemNumber(prodName, packaging, mixType)
       });
 
@@ -410,7 +422,7 @@ function calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixT
     const packages = calcPackages(gallons, pkgSize);
     totalArea.push({
       product: name, coats, gallons,
-      packaging: packages + ' x ' + pkgSize + ' Gal',
+      packaging: fmtPkg(packages, packaging),
       item: getItemNumber(name, packaging, 'ready')
     });
   } else {
@@ -421,7 +433,7 @@ function calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixT
     const packages = calcPackages(gallons, pkgSize);
     totalArea.push({
       product: name, coats, gallons,
-      packaging: packages + ' x ' + pkgSize + ' Gal',
+      packaging: fmtPkg(packages, packaging),
       item: getItemNumber(name, packaging, 'concentrate')
     });
     const sandLbs = getResurfacerSandLbs(packages, packaging);
@@ -452,7 +464,7 @@ function calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixT
       const packages = calcPackages(gallons, pkgSize);
       sysResult.items.push({
         product: item.product, coats: item.coats, gallons,
-        packaging: packages + ' x ' + pkgSize + ' Gal',
+        packaging: fmtPkg(packages, packaging),
         item: getItemNumber(item.product, packaging, mixType)
       });
     }
@@ -774,7 +786,7 @@ function renderResults() {
     <article class="summary-item"><span class="label">Total Area (sq yd)</span><span class="value">${fmt(totalCombinedSqYd)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq m)</span><span class="value">${fmt(totalCombinedSqM)}</span></article>
     <article class="summary-item"><span class="label">Mix Type</span><span class="value">${mixType === 'ready' ? 'Ready-to-Use' : 'Concentrate'}</span></article>
-    <article class="summary-item"><span class="label">Packaging</span><span class="value">${getPackageSize(packaging)} Gallon</span></article>
+    <article class="summary-item"><span class="label">Packaging</span><span class="value">${getPackageLabel(packaging)}</span></article>
   `;
 
   // Zone area breakdown
