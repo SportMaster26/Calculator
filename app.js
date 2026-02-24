@@ -875,6 +875,11 @@ function init() {
 
   // Linear feet input → recalculate crack filler estimates
   $('crackLinearFeet').addEventListener('input', renderCrackFillers);
+
+  // ProCushion toggle → show/hide cushion section
+  $('proCushionToggle').addEventListener('change', () => {
+    $('proCushionSection').classList.toggle('hidden', !$('proCushionToggle').checked);
+  });
 }
 
 init();
