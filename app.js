@@ -805,12 +805,16 @@ function renderResults() {
   });
   $('zoneProductsBody').innerHTML = zoneHtml || '<tr><td colspan="5">No zone products</td></tr>';
 
-  // ProCushion
+  // ProCushion — filter to selected system
+  const cushionSelection = $('proCushionToggle').value;
   let cushionHtml = '';
-  for (const sys of global.cushion) {
-    cushionHtml += `<tr class="zone-header"><td colspan="5">${sys.system}</td></tr>`;
-    for (const item of sys.items) {
-      cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
+  if (cushionSelection !== 'none') {
+    const selectedLabel = cushionSelection === 'standard' ? 'Standard System' : 'Premium System';
+    const selected = global.cushion.find(s => s.system === selectedLabel);
+    if (selected) {
+      for (const item of selected.items) {
+        cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
+      }
     }
   }
   $('cushionBody').innerHTML = cushionHtml;
@@ -876,9 +880,11 @@ function init() {
   // Linear feet input → recalculate crack filler estimates
   $('crackLinearFeet').addEventListener('input', renderCrackFillers);
 
-  // ProCushion toggle → show/hide cushion section
+  // ProCushion dropdown → show/hide cushion section & recalculate
   $('proCushionToggle').addEventListener('change', () => {
-    $('proCushionSection').classList.toggle('hidden', !$('proCushionToggle').checked);
+    const val = $('proCushionToggle').value;
+    $('proCushionSection').classList.toggle('hidden', val === 'none');
+    renderResults();
   });
 }
 
