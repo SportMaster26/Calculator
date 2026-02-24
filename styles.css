@@ -85,6 +85,14 @@ label {
   flex-direction: column;
   gap: 4px;
 }
+label.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  align-self: end;
+  padding-bottom: 8px;
+}
 label > span {
   font-size: 0.8rem;
   font-weight: 600;

@@ -41,6 +41,10 @@
               <option value="concentrate">Concentrate (add sand &amp; water onsite)</option>
             </select>
           </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="proCushionToggle">
+            <span>Include ProCushion</span>
+          </label>
         </div>
       </section>
 
@@ -110,8 +114,8 @@
       </section>
 
       <!-- ─── ProCushion ─── -->
-      <section class="card" aria-label="ProCushion">
-        <h2>ProCushion Layers (Optional)</h2>
+      <section class="card hidden" id="proCushionSection" aria-label="ProCushion">
+        <h2>ProCushion Layers</h2>
         <table>
           <thead>
             <tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
