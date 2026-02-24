@@ -333,18 +333,16 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       : getZoneProductsConc(entry.courtType, zone.name);
 
     for (const [prodName, coats] of prods) {
+      // Ready Mix / PickleMaster RTU only come in 5-gallon pails — skip when drums or kegs selected
+      if ((prodName === 'Ready Mix' || prodName === 'PickleMaster RTU') && packaging !== '5') continue;
+
       const rate = getCoverageRate(prodName, surfaceType, mixType);
       const gallons = calcGallons(rate, zone.sqyd, coats);
       const packages = calcPackages(gallons, pkgSize);
 
-      const effectivePkgKey = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix') ? '5' : packaging;
-      const effectivePkgSize = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix') ? 5 : pkgSize;
-      const effectivePackages = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix')
-        ? calcPackages(gallons, 5) : packages;
-
       zoneResult.products.push({
         product: prodName, coats, gallons,
-        packaging: fmtPkg(effectivePackages, effectivePkgKey),
+        packaging: fmtPkg(packages, packaging),
         item: getItemNumber(prodName, packaging, mixType)
       });
 
@@ -358,10 +356,9 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       }
 
       if (colorName !== 'Not Selected') {
-        const cpPkg = (prodName === 'PickleMaster RTU' || prodName === 'Ready Mix') ? '5' : packaging;
-        const cpCount = getColorPlusCount(effectivePackages, cpPkg, prodName);
-        const cpUnit = getColorPlusUnit(cpPkg, prodName);
-        const cpItem = getColorPlusItemNumber(colorName, cpPkg, prodName);
+        const cpCount = getColorPlusCount(packages, packaging, prodName);
+        const cpUnit = getColorPlusUnit(packaging, prodName);
+        const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
         if (cpCount > 0) {
           zoneResult.products.push({
             product: colorName, coats: '', gallons: '',
