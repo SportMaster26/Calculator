@@ -780,10 +780,6 @@ function renderCourtEntries() {
               <span>${{sqft:'Square Feet',sqyd:'Square Yards',sqm:'Square Meters'}[entry.areaInputMode] || 'Area'}</span>
               <input class="entry-area-value input-highlight" type="number" min="0" step="0.1" value="${entry.areaValue}" />
             </label>
-            <label>
-              <span>Total ${({wxl:'Sq Ft',sqft:'Sq Ft',sqyd:'Sq Yd',sqm:'Sq M'})[entry.areaInputMode]}</span>
-              <input class="entry-total-area" type="text" readonly value="${fmt(getEntryDisplayArea(entry))}" />
-            </label>
           </div>
           <div class="form-row">${zoneColorsHtml}</div>
         </div>
@@ -824,8 +820,6 @@ function renderCourtEntries() {
     // Events: field changes → update preview + results
     const onFieldChange = () => {
       readEntryFromDOM(entry);
-      // Update computed total area field in the selected unit
-      card.querySelector('.entry-total-area').value = fmt(getEntryDisplayArea(entry));
       // Update preview inline (fast)
       const previewDiv = card.querySelector('.preview-svg');
       const legendDiv = card.querySelector('.preview-legend');
