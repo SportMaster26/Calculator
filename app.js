@@ -610,7 +610,11 @@ function createEntry(courtType) {
     numCourts: 1,
     width: def.defaultWidth,
     length: def.defaultLength,
-    packaging: '55',
+    packaging: '5',
+    mixType: 'ready',
+    cushionSystem: 'none',
+    crackFiller: false,
+    crackLinearFeet: 0,
     zoneColors: def.zones.map((z, i) => i === 0 ? 'Light Blue ColorPlus' : 'Blue ColorPlus')
   };
 }
@@ -623,6 +627,10 @@ function readEntryFromDOM(entry) {
   entry.width = parseFloat(el.querySelector('.entry-width').value) || 0;
   entry.length = parseFloat(el.querySelector('.entry-length').value) || 0;
   entry.packaging = el.querySelector('.entry-packaging').value;
+  entry.mixType = el.querySelector('.entry-mix-type').value;
+  entry.cushionSystem = el.querySelector('.entry-cushion').value;
+  entry.crackFiller = el.querySelector('.entry-crack-filler').checked;
+  entry.crackLinearFeet = parseFloat(el.querySelector('.entry-crack-feet').value) || 0;
   const colorSels = el.querySelectorAll('.entry-zone-color');
   entry.zoneColors = Array.from(colorSels).map(s => s.value);
   return entry;
@@ -684,11 +692,37 @@ function renderCourtEntries() {
             </label>
             <label>
               <span>Packaging</span>
-              <select class="entry-packaging">
+              <select class="entry-packaging"${entry.mixType === 'ready' ? ' disabled' : ''}>
                 <option value="55"${entry.packaging === '55' ? ' selected' : ''}>55 Gallon Drums</option>
                 <option value="30"${entry.packaging === '30' ? ' selected' : ''}>30 Gallon Kegs</option>
                 <option value="5"${entry.packaging === '5' ? ' selected' : ''}>5 Gallon Pails</option>
               </select>
+            </label>
+            <label>
+              <span>Mix Type</span>
+              <select class="entry-mix-type">
+                <option value="ready"${entry.mixType === 'ready' ? ' selected' : ''}>Ready-to-Use</option>
+                <option value="concWithSand"${entry.mixType === 'concWithSand' ? ' selected' : ''}>Concentrate w/ Sand</option>
+                <option value="concentrate"${entry.mixType === 'concentrate' ? ' selected' : ''}>Concentrate</option>
+              </select>
+            </label>
+            <label>
+              <span>ProCushion</span>
+              <select class="entry-cushion">
+                <option value="none"${entry.cushionSystem === 'none' ? ' selected' : ''}>None</option>
+                <option value="standard"${entry.cushionSystem === 'standard' ? ' selected' : ''}>Standard System</option>
+                <option value="premium"${entry.cushionSystem === 'premium' ? ' selected' : ''}>Premium System</option>
+              </select>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="entry-crack-filler"${entry.crackFiller ? ' checked' : ''}>
+              <span>Crack Filler</span>
+            </label>
+          </div>
+          <div class="form-row entry-crack-section${entry.crackFiller ? '' : ' hidden'}">
+            <label>
+              <span>Linear Feet of Cracks</span>
+              <input class="entry-crack-feet" type="number" min="0" step="1" value="${entry.crackLinearFeet}" />
             </label>
           </div>
           <div class="form-row">
@@ -771,6 +805,25 @@ function renderCourtEntries() {
         el.addEventListener('change', onFieldChange);
       }
     });
+
+    // Event: mix type change → lock/unlock packaging
+    card.querySelector('.entry-mix-type').addEventListener('change', () => {
+      const pkgSel = card.querySelector('.entry-packaging');
+      if (entry.mixType === 'ready') {
+        pkgSel.value = '5';
+        pkgSel.disabled = true;
+        entry.packaging = '5';
+      } else {
+        pkgSel.disabled = false;
+      }
+      renderResults();
+    });
+
+    // Event: crack filler checkbox → show/hide linear feet input
+    card.querySelector('.entry-crack-filler').addEventListener('change', () => {
+      card.querySelector('.entry-crack-section').classList.toggle('hidden', !entry.crackFiller);
+      renderResults();
+    });
   });
 }
 
@@ -786,12 +839,15 @@ function renderLegend(zones, zoneColors) {
 function renderResults() {
   // Read global settings
   const surfaceType = $('surfaceType').value;
-  const mixType = $('mixType').value;
 
-  // Calculate per-entry (each entry carries its own packaging)
+  // Calculate per-entry (each entry carries its own packaging + mixType)
   const entryResults = courtEntries.map(entry => {
-    const result = calculateEntry(entry, surfaceType, entry.packaging, mixType);
+    const result = calculateEntry(entry, surfaceType, entry.packaging, entry.mixType);
     result.packaging = entry.packaging;
+    result.mixType = entry.mixType;
+    result.cushionSystem = entry.cushionSystem;
+    result.crackFiller = entry.crackFiller;
+    result.crackLinearFeet = entry.crackLinearFeet;
     return result;
   });
 
@@ -800,13 +856,13 @@ function renderResults() {
   const totalCombinedSqYd = totalCombinedSqFt / SQFT_PER_SQYD;
   const totalCombinedSqM = totalCombinedSqFt / SQFT_PER_SQM;
 
-  // Global products (resurfacer, cushion) — calculated per entry then combined
+  // Global products (resurfacer, cushion) — calculated per entry with its own mixType
   const allTotalArea = [];
   const allCushion = [];
   entryResults.forEach(r => {
-    const g = calculateGlobalProducts(r.totalSqFt, surfaceType, r.packaging, mixType);
+    const g = calculateGlobalProducts(r.totalSqFt, surfaceType, r.packaging, r.mixType);
     allTotalArea.push({ label: r.label, items: g.totalArea });
-    allCushion.push({ label: r.label, cushion: g.cushion });
+    allCushion.push({ label: r.label, cushionSystem: r.cushionSystem, cushion: g.cushion });
   });
 
   // Summary
@@ -820,7 +876,6 @@ function renderResults() {
     <article class="summary-item"><span class="label">Total Area (sq ft)</span><span class="value">${fmt(totalCombinedSqFt)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq yd)</span><span class="value">${fmt(totalCombinedSqYd)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq m)</span><span class="value">${fmt(totalCombinedSqM)}</span></article>
-    <article class="summary-item"><span class="label">Mix Type</span><span class="value">${mixType === 'ready' ? 'Ready-to-Use' : mixType === 'concWithSand' ? 'Concentrate w/ Sand' : 'Concentrate'}</span></article>
   `;
 
   // Zone area breakdown
@@ -858,24 +913,23 @@ function renderResults() {
   });
   $('zoneProductsBody').innerHTML = zoneHtml || '<tr><td colspan="5">No zone products</td></tr>';
 
-  // ProCushion — filter to selected system, per entry
-  const cushionSelection = $('proCushionToggle').value;
+  // ProCushion — per entry cushion system
   let cushionHtml = '';
-  if (cushionSelection !== 'none') {
-    const selectedLabel = cushionSelection === 'standard' ? 'Standard System' : 'Premium System';
-    allCushion.forEach(g => {
-      const selected = g.cushion.find(s => s.system === selectedLabel);
-      if (selected) {
-        if (allCushion.length > 1) {
-          cushionHtml += `<tr class="zone-header"><td colspan="5">${g.label}</td></tr>`;
-        }
-        for (const item of selected.items) {
-          cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
-        }
+  let anyCushion = false;
+  allCushion.forEach(g => {
+    if (g.cushionSystem === 'none') return;
+    anyCushion = true;
+    const selectedLabel = g.cushionSystem === 'standard' ? 'Standard System' : 'Premium System';
+    const selected = g.cushion.find(s => s.system === selectedLabel);
+    if (selected) {
+      cushionHtml += `<tr class="zone-header"><td colspan="5">${g.label} — ${selectedLabel}</td></tr>`;
+      for (const item of selected.items) {
+        cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
       }
-    });
-  }
+    }
+  });
   $('cushionBody').innerHTML = cushionHtml;
+  $('proCushionSection').classList.toggle('hidden', !anyCushion);
 
   // Striping (aggregated from all entries)
   let allStriping = [];
@@ -889,42 +943,27 @@ function renderResults() {
   } else {
     $('stripingBody').innerHTML = '<tr><td colspan="5">N/A for this court type</td></tr>';
   }
+
+  // Crack filler estimates
+  renderCrackFillers(entryResults);
 }
 
-function renderCrackFillers() {
-  const linearFeet = parseFloat($('crackLinearFeet').value) || 0;
-  $('crackBody').innerHTML = crackFillers.map(f => {
-    let estimate = '—';
-    if (linearFeet > 0) {
-      // Use the conservative rate (rateMin = fewer feet per gallon → more gallons needed)
-      const gallons = Math.ceil(linearFeet / f.rateMin);
-      estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
-    }
-    return `<tr><td>${f.product}</td><td>${f.rateLabel}</td><td>${f.width}</td><td>${estimate}</td></tr>`;
-  }).join('');
-}
+function renderCrackFillers(entryResults) {
+  const crackEntries = entryResults.filter(r => r.crackFiller && r.crackLinearFeet > 0);
+  const anyCrack = crackEntries.length > 0;
+  $('crackFillerSection').classList.toggle('hidden', !anyCrack);
+  if (!anyCrack) { $('crackBody').innerHTML = ''; return; }
 
-function updateCrackFillerVisibility() {
-  const surfaceType = $('surfaceType').value;
-  const show = surfaceType === 'concrete' || surfaceType === 'existingConcrete' || surfaceType === 'existingAsphalt';
-  $('crackFillerSection').classList.toggle('hidden', !show);
-}
-
-function updatePackagingForMixType() {
-  const mixType = $('mixType').value;
-  const isRTU = mixType === 'ready';
-  document.querySelectorAll('.entry-packaging').forEach(sel => {
-    if (isRTU) {
-      sel.value = '5';
-      sel.disabled = true;
-    } else {
-      sel.disabled = false;
-    }
+  let html = '';
+  crackEntries.forEach(r => {
+    crackFillers.forEach((f, fi) => {
+      const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
+      const estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
+      html += `<tr>${fi === 0 ? `<td rowspan="${crackFillers.length}">${r.label}<br><small>${r.crackLinearFeet} linear ft</small></td>` : ''}`;
+      html += `<td>${f.product}</td><td>${f.rateLabel}</td><td>${f.width}</td><td>${estimate}</td></tr>`;
+    });
   });
-  // Also sync the entry data
-  if (isRTU) {
-    courtEntries.forEach(e => { e.packaging = '5'; });
-  }
+  $('crackBody').innerHTML = html;
 }
 
 // ── Initialize ──
@@ -932,9 +971,6 @@ function init() {
   // Start with one tennis court entry
   courtEntries.push(createEntry('tennis'));
   renderCourtEntries();
-  updateCrackFillerVisibility();
-  updatePackagingForMixType();
-  renderCrackFillers();
   $('noteText').textContent = 'Make sure to check Industry Standard Courts for proper dimensions and follow ASBA for Overrun requirements.';
   renderResults();
 
@@ -942,33 +978,11 @@ function init() {
   $('addCourtBtn').addEventListener('click', () => {
     courtEntries.push(createEntry('tennis'));
     renderCourtEntries();
-    updatePackagingForMixType();
     renderResults();
   });
 
   // Global settings change → recalculate
-  for (const id of ['surfaceType', 'mixType']) {
-    $(id).addEventListener('change', renderResults);
-  }
-
-  // Mix type change → update packaging restrictions
-  $('mixType').addEventListener('change', () => {
-    updatePackagingForMixType();
-    renderResults();
-  });
-
-  // Surface type change → show/hide crack filler section
-  $('surfaceType').addEventListener('change', updateCrackFillerVisibility);
-
-  // Linear feet input → recalculate crack filler estimates
-  $('crackLinearFeet').addEventListener('input', renderCrackFillers);
-
-  // ProCushion dropdown → show/hide cushion section & recalculate
-  $('proCushionToggle').addEventListener('change', () => {
-    const val = $('proCushionToggle').value;
-    $('proCushionSection').classList.toggle('hidden', val === 'none');
-    renderResults();
-  });
+  $('surfaceType').addEventListener('change', renderResults);
 }
 
 init();
