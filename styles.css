@@ -108,6 +108,11 @@ input[readonly] {
   font-weight: 600;
   cursor: default;
 }
+select:disabled {
+  background: var(--accent-pale);
+  cursor: default;
+  opacity: 0.8;
+}
 select:focus,
 input:focus {
   outline: none;

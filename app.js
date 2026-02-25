@@ -166,24 +166,24 @@ const courtDefs = {
   }
 };
 
-// ── Products per zone per court type (Ready mix) ──
-function getZoneProductsReady(courtType, zoneName) {
-  if (courtType === 'tennis') {
+// ── Products per zone per court type (Ready-to-Use — RTU only) ──
+function getZoneProductsRTU(courtType, zoneName) {
+  if (courtType === 'pickleball') {
     return [
-      ['Neutral Concentrate w/ Sand', 2],
-      ['Ready Mix', 2]
+      ['PickleMaster RTU', 2]
     ];
   }
+  return [
+    ['Ready Mix', 2]
+  ];
+}
+
+// ── Products per zone per court type (Concentrate w/ Sand) ──
+function getZoneProductsConcWithSand(courtType, zoneName) {
   if (courtType === 'pickleball') {
     return [
       ['PickleMaster', 2],
       ['PickleMaster RTU', 2]
-    ];
-  }
-  if (courtType === 'basketballFull' || courtType === 'basketballHalf') {
-    return [
-      ['Neutral Concentrate w/ Sand', 2],
-      ['Ready Mix', 2]
     ];
   }
   return [
@@ -210,7 +210,7 @@ function getZoneProductsConc(courtType, zoneName) {
 // ────────────────────────────────────────────────────────
 
 function getCoverageRate(productName, surfaceType, mixType) {
-  const table = mixType === 'ready' ? coverageReady : coverageConc;
+  const table = (mixType === 'ready' || mixType === 'concWithSand') ? coverageReady : coverageConc;
   const rates = table[productName];
   if (!rates) return 0;
   const idx = { concrete: 0, asphalt: 1, existingConcrete: 2, existingAsphalt: 3 }[surfaceType];
@@ -218,7 +218,7 @@ function getCoverageRate(productName, surfaceType, mixType) {
 }
 
 function getItemNumber(productName, packaging, mixType) {
-  const table = mixType === 'ready' ? itemNumbersReady : itemNumbersConc;
+  const table = (mixType === 'ready' || mixType === 'concWithSand') ? itemNumbersReady : itemNumbersConc;
   const base = table[productName];
   if (!base) return '';
   if (base.endsWith('P')) return base;
@@ -328,8 +328,10 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
     const colorName = entry.zoneColors[zi] || 'Not Selected';
     const prods = mixType === 'ready'
-      ? getZoneProductsReady(entry.courtType, zone.name)
-      : getZoneProductsConc(entry.courtType, zone.name);
+      ? getZoneProductsRTU(entry.courtType, zone.name)
+      : mixType === 'concWithSand'
+        ? getZoneProductsConcWithSand(entry.courtType, zone.name)
+        : getZoneProductsConc(entry.courtType, zone.name);
 
     for (const [prodName, coats] of prods) {
       // Ready Mix / PickleMaster RTU only come in 5-gallon pails — skip when drums or kegs selected
@@ -411,7 +413,7 @@ function calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixT
     });
   }
 
-  if (mixType === 'ready') {
+  if (mixType === 'ready' || mixType === 'concWithSand') {
     const name = 'Acrylic Resurfacer w/ Sand';
     const rate = getCoverageRate(name, surfaceType, 'ready');
     const coats = surfaceType === 'asphalt' ? 2 : 1;
@@ -818,7 +820,7 @@ function renderResults() {
     <article class="summary-item"><span class="label">Total Area (sq ft)</span><span class="value">${fmt(totalCombinedSqFt)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq yd)</span><span class="value">${fmt(totalCombinedSqYd)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq m)</span><span class="value">${fmt(totalCombinedSqM)}</span></article>
-    <article class="summary-item"><span class="label">Mix Type</span><span class="value">${mixType === 'ready' ? 'Ready-to-Use' : 'Concentrate'}</span></article>
+    <article class="summary-item"><span class="label">Mix Type</span><span class="value">${mixType === 'ready' ? 'Ready-to-Use' : mixType === 'concWithSand' ? 'Concentrate w/ Sand' : 'Concentrate'}</span></article>
   `;
 
   // Zone area breakdown
@@ -908,12 +910,30 @@ function updateCrackFillerVisibility() {
   $('crackFillerSection').classList.toggle('hidden', !show);
 }
 
+function updatePackagingForMixType() {
+  const mixType = $('mixType').value;
+  const isRTU = mixType === 'ready';
+  document.querySelectorAll('.entry-packaging').forEach(sel => {
+    if (isRTU) {
+      sel.value = '5';
+      sel.disabled = true;
+    } else {
+      sel.disabled = false;
+    }
+  });
+  // Also sync the entry data
+  if (isRTU) {
+    courtEntries.forEach(e => { e.packaging = '5'; });
+  }
+}
+
 // ── Initialize ──
 function init() {
   // Start with one tennis court entry
   courtEntries.push(createEntry('tennis'));
   renderCourtEntries();
   updateCrackFillerVisibility();
+  updatePackagingForMixType();
   renderCrackFillers();
   $('noteText').textContent = 'Make sure to check Industry Standard Courts for proper dimensions and follow ASBA for Overrun requirements.';
   renderResults();
@@ -922,6 +942,7 @@ function init() {
   $('addCourtBtn').addEventListener('click', () => {
     courtEntries.push(createEntry('tennis'));
     renderCourtEntries();
+    updatePackagingForMixType();
     renderResults();
   });
 
@@ -929,6 +950,12 @@ function init() {
   for (const id of ['surfaceType', 'mixType']) {
     $(id).addEventListener('change', renderResults);
   }
+
+  // Mix type change → update packaging restrictions
+  $('mixType').addEventListener('change', () => {
+    updatePackagingForMixType();
+    renderResults();
+  });
 
   // Surface type change → show/hide crack filler section
   $('surfaceType').addEventListener('change', updateCrackFillerVisibility);
