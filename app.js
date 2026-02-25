@@ -176,7 +176,6 @@ function getZoneProductsReady(courtType, zoneName) {
   }
   if (courtType === 'pickleball') {
     return [
-      ['Neutral Concentrate w/ Sand', 2],
       ['PickleMaster', 2],
       ['PickleMaster RTU', 2]
     ];
