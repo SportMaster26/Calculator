@@ -608,6 +608,7 @@ function createEntry(courtType) {
     numCourts: 1,
     width: def.defaultWidth,
     length: def.defaultLength,
+    packaging: '55',
     zoneColors: def.zones.map((z, i) => i === 0 ? 'Light Blue ColorPlus' : 'Blue ColorPlus')
   };
 }
@@ -619,6 +620,7 @@ function readEntryFromDOM(entry) {
   entry.numCourts = Math.max(1, parseInt(el.querySelector('.entry-num-courts').value, 10) || 1);
   entry.width = parseFloat(el.querySelector('.entry-width').value) || 0;
   entry.length = parseFloat(el.querySelector('.entry-length').value) || 0;
+  entry.packaging = el.querySelector('.entry-packaging').value;
   const colorSels = el.querySelectorAll('.entry-zone-color');
   entry.zoneColors = Array.from(colorSels).map(s => s.value);
   return entry;
@@ -677,6 +679,14 @@ function renderCourtEntries() {
             <label ${showCourtsField ? '' : 'class="hidden"'}>
               <span>Number of Courts</span>
               <input class="entry-num-courts input-highlight" type="number" min="1" step="1" value="${entry.numCourts}" />
+            </label>
+            <label>
+              <span>Packaging</span>
+              <select class="entry-packaging">
+                <option value="55"${entry.packaging === '55' ? ' selected' : ''}>55 Gallon Drums</option>
+                <option value="30"${entry.packaging === '30' ? ' selected' : ''}>30 Gallon Kegs</option>
+                <option value="5"${entry.packaging === '5' ? ' selected' : ''}>5 Gallon Pails</option>
+              </select>
             </label>
           </div>
           <div class="form-row">
@@ -757,19 +767,28 @@ function renderLegend(zones, zoneColors) {
 function renderResults() {
   // Read global settings
   const surfaceType = $('surfaceType').value;
-  const packaging = $('packaging').value;
   const mixType = $('mixType').value;
 
-  // Calculate per-entry
-  const entryResults = courtEntries.map(entry => calculateEntry(entry, surfaceType, packaging, mixType));
+  // Calculate per-entry (each entry carries its own packaging)
+  const entryResults = courtEntries.map(entry => {
+    const result = calculateEntry(entry, surfaceType, entry.packaging, mixType);
+    result.packaging = entry.packaging;
+    return result;
+  });
 
   // Combined total area
   const totalCombinedSqFt = entryResults.reduce((sum, r) => sum + r.totalSqFt, 0);
   const totalCombinedSqYd = totalCombinedSqFt / SQFT_PER_SQYD;
   const totalCombinedSqM = totalCombinedSqFt / SQFT_PER_SQM;
 
-  // Global products (resurfacer, cushion)
-  const global = calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixType);
+  // Global products (resurfacer, cushion) — calculated per entry then combined
+  const allTotalArea = [];
+  const allCushion = [];
+  entryResults.forEach(r => {
+    const g = calculateGlobalProducts(r.totalSqFt, surfaceType, r.packaging, mixType);
+    allTotalArea.push({ label: r.label, items: g.totalArea });
+    allCushion.push({ label: r.label, cushion: g.cushion });
+  });
 
   // Summary
   const courtSummary = courtEntries.map(e => {
@@ -783,7 +802,6 @@ function renderResults() {
     <article class="summary-item"><span class="label">Total Area (sq yd)</span><span class="value">${fmt(totalCombinedSqYd)}</span></article>
     <article class="summary-item"><span class="label">Total Area (sq m)</span><span class="value">${fmt(totalCombinedSqM)}</span></article>
     <article class="summary-item"><span class="label">Mix Type</span><span class="value">${mixType === 'ready' ? 'Ready-to-Use' : 'Concentrate'}</span></article>
-    <article class="summary-item"><span class="label">Packaging</span><span class="value">${getPackageLabel(packaging)}</span></article>
   `;
 
   // Zone area breakdown
@@ -795,10 +813,17 @@ function renderResults() {
   });
   $('zoneAreasBody').innerHTML = zoneAreaHtml || '<tr><td colspan="4">Add courts above</td></tr>';
 
-  // Total area materials
-  $('totalAreaBody').innerHTML = global.totalArea.map(r => `
-    <tr><td>${r.product}</td><td>${r.coats}</td><td>${r.gallons}</td><td>${r.packaging}</td><td>${r.item}</td></tr>
-  `).join('');
+  // Total area materials (per entry)
+  let totalAreaHtml = '';
+  allTotalArea.forEach(g => {
+    if (allTotalArea.length > 1) {
+      totalAreaHtml += `<tr class="zone-header"><td colspan="5">${g.label}</td></tr>`;
+    }
+    for (const r of g.items) {
+      totalAreaHtml += `<tr><td>${r.product}</td><td>${r.coats}</td><td>${r.gallons}</td><td>${r.packaging}</td><td>${r.item}</td></tr>`;
+    }
+  });
+  $('totalAreaBody').innerHTML = totalAreaHtml;
 
   // Per-entry zone products
   let zoneHtml = '';
@@ -814,17 +839,22 @@ function renderResults() {
   });
   $('zoneProductsBody').innerHTML = zoneHtml || '<tr><td colspan="5">No zone products</td></tr>';
 
-  // ProCushion — filter to selected system
+  // ProCushion — filter to selected system, per entry
   const cushionSelection = $('proCushionToggle').value;
   let cushionHtml = '';
   if (cushionSelection !== 'none') {
     const selectedLabel = cushionSelection === 'standard' ? 'Standard System' : 'Premium System';
-    const selected = global.cushion.find(s => s.system === selectedLabel);
-    if (selected) {
-      for (const item of selected.items) {
-        cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
+    allCushion.forEach(g => {
+      const selected = g.cushion.find(s => s.system === selectedLabel);
+      if (selected) {
+        if (allCushion.length > 1) {
+          cushionHtml += `<tr class="zone-header"><td colspan="5">${g.label}</td></tr>`;
+        }
+        for (const item of selected.items) {
+          cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
+        }
       }
-    }
+    });
   }
   $('cushionBody').innerHTML = cushionHtml;
 
@@ -879,7 +909,7 @@ function init() {
   });
 
   // Global settings change → recalculate
-  for (const id of ['surfaceType', 'packaging', 'mixType']) {
+  for (const id of ['surfaceType', 'mixType']) {
     $(id).addEventListener('change', renderResults);
   }
 
