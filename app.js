@@ -406,10 +406,14 @@ function calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixT
   const totalArea = [];
   const showAdhesion = surfaceType === 'concrete' || surfaceType === 'existingConcrete';
   if (showAdhesion) {
+    const adhRate = getCoverageRate('Acrylic Adhesion Promoter', surfaceType, mixType);
+    const adhGallons = calcGallons(adhRate, totalSqYd, 1);
+    const adhPkgSize = getPackageSize('5');
+    const adhPackages = calcPackages(adhGallons, adhPkgSize);
     totalArea.push({
-      product: 'Acrylic Adhesion Promoter', coats: '', gallons: '', packaging: '',
-      item: getItemNumber('Acrylic Adhesion Promoter', packaging, mixType),
-      note: 'Recommended for concrete surfaces'
+      product: 'Acrylic Adhesion Promoter', coats: 1, gallons: adhGallons,
+      packaging: fmtPkg(adhPackages, '5'),
+      item: 'C1650P'
     });
   }
 
