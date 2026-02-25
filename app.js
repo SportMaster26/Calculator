@@ -863,10 +863,11 @@ function renderResults() {
   // Global products (resurfacer, cushion) — calculated per entry with its own mixType
   const allTotalArea = [];
   const allCushion = [];
-  entryResults.forEach(r => {
+  entryResults.forEach((r, ri) => {
     const g = calculateGlobalProducts(r.totalSqFt, surfaceType, r.packaging, r.mixType);
-    allTotalArea.push({ label: r.label, items: g.totalArea });
-    allCushion.push({ label: r.label, cushionSystem: r.cushionSystem, cushion: g.cushion });
+    const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
+    allTotalArea.push({ label: courtLabel, items: g.totalArea });
+    allCushion.push({ label: courtLabel, cushionSystem: r.cushionSystem, cushion: g.cushion });
   });
 
   // Summary
@@ -884,9 +885,10 @@ function renderResults() {
 
   // Zone area breakdown
   let zoneAreaHtml = '';
-  entryResults.forEach(r => {
+  entryResults.forEach((r, ri) => {
+    const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
     r.zoneAreas.forEach(z => {
-      zoneAreaHtml += `<tr><td>${r.label}</td><td>${z.name}</td><td>${fmt(z.sqft)}</td><td>${fmt(z.sqyd)}</td></tr>`;
+      zoneAreaHtml += `<tr><td>${courtLabel}</td><td>${z.name}</td><td>${fmt(z.sqft)}</td><td>${fmt(z.sqyd)}</td></tr>`;
     });
   });
   $('zoneAreasBody').innerHTML = zoneAreaHtml || '<tr><td colspan="4">Add courts above</td></tr>';
@@ -903,10 +905,13 @@ function renderResults() {
   });
   $('totalAreaBody').innerHTML = totalAreaHtml;
 
-  // Per-entry zone products
+  // Per-entry zone products (individual per court)
   let zoneHtml = '';
-  entryResults.forEach(r => {
-    zoneHtml += `<tr class="zone-header"><td colspan="5">${r.label} (${r.numCourts}) &mdash; ${fmt(r.totalSqFt)} sq ft</td></tr>`;
+  entryResults.forEach((r, ri) => {
+    const courtLabel = entryResults.length > 1
+      ? (r.label + ' (Court ' + (ri + 1) + ') &mdash; ' + r.numCourts + ' court' + (r.numCourts > 1 ? 's' : '') + ' &mdash; ' + fmt(r.totalSqFt) + ' sq ft')
+      : (r.label + ' (' + r.numCourts + ') &mdash; ' + fmt(r.totalSqFt) + ' sq ft');
+    zoneHtml += `<tr class="zone-header"><td colspan="5">${courtLabel}</td></tr>`;
     for (const zone of r.zones) {
       if (zone.products.length === 0) continue;
       zoneHtml += `<tr class="zone-subheader"><td colspan="5">${zone.name} (${fmt(zone.sqft)} sq ft)</td></tr>`;
@@ -935,15 +940,20 @@ function renderResults() {
   $('cushionBody').innerHTML = cushionHtml;
   $('proCushionSection').classList.toggle('hidden', !anyCushion);
 
-  // Striping (aggregated from all entries)
-  let allStriping = [];
-  entryResults.forEach(r => {
-    r.striping.forEach(s => allStriping.push({ ...s, court: r.label }));
+  // Striping (grouped by court entry)
+  let stripingHtml = '';
+  let anyStriping = false;
+  entryResults.forEach((r, ri) => {
+    if (r.striping.length === 0) return;
+    anyStriping = true;
+    const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
+    stripingHtml += `<tr class="zone-header"><td colspan="5">${courtLabel}</td></tr>`;
+    for (const s of r.striping) {
+      stripingHtml += `<tr><td>${s.product}</td><td>${s.coats}</td><td>${s.gallons}</td><td>${s.packaging}</td><td>${s.item}</td></tr>`;
+    }
   });
-  if (allStriping.length > 0) {
-    $('stripingBody').innerHTML = allStriping.map(r =>
-      `<tr><td>${r.product}</td><td>${r.coats}</td><td>${r.gallons}</td><td>${r.packaging}</td><td>${r.item}</td></tr>`
-    ).join('');
+  if (anyStriping) {
+    $('stripingBody').innerHTML = stripingHtml;
   } else {
     $('stripingBody').innerHTML = '<tr><td colspan="5">N/A for this court type</td></tr>';
   }
