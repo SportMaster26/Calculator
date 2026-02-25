@@ -317,7 +317,7 @@ function computeZoneAreas(courtType, totalSqFt, numCourts) {
 
 // ── Per-court-entry calculation ──
 function calculateEntry(entry, surfaceType, packaging, mixType) {
-  const totalSqFt = entry.width * entry.length;
+  const totalSqFt = getEntrySqFt(entry);
   const totalSqYd = totalSqFt / SQFT_PER_SQYD;
   const pkgSize = getPackageSize(packaging);
   const zoneAreas = computeZoneAreas(entry.courtType, totalSqFt, entry.numCourts);
@@ -612,8 +612,10 @@ function createEntry(courtType) {
     id: nextEntryId++,
     courtType,
     numCourts: 1,
+    areaInputMode: 'wxl',    // 'wxl' | 'sqft' | 'sqyd' | 'sqm'
     width: def.defaultWidth,
     length: def.defaultLength,
+    areaValue: def.defaultWidth * def.defaultLength,  // direct-entry area (in chosen unit)
     packaging: '5',
     mixType: 'ready',
     cushionSystem: 'none',
@@ -628,8 +630,13 @@ function readEntryFromDOM(entry) {
   if (!el) return entry;
   entry.courtType = el.querySelector('.entry-court-type').value;
   entry.numCourts = Math.max(1, parseInt(el.querySelector('.entry-num-courts').value, 10) || 1);
-  entry.width = parseFloat(el.querySelector('.entry-width').value) || 0;
-  entry.length = parseFloat(el.querySelector('.entry-length').value) || 0;
+  entry.areaInputMode = el.querySelector('.entry-area-mode').value;
+  if (entry.areaInputMode === 'wxl') {
+    entry.width = parseFloat(el.querySelector('.entry-width').value) || 0;
+    entry.length = parseFloat(el.querySelector('.entry-length').value) || 0;
+  } else {
+    entry.areaValue = parseFloat(el.querySelector('.entry-area-value').value) || 0;
+  }
   entry.packaging = el.querySelector('.entry-packaging').value;
   entry.mixType = el.querySelector('.entry-mix-type').value;
   entry.cushionSystem = el.querySelector('.entry-cushion').value;
@@ -638,6 +645,20 @@ function readEntryFromDOM(entry) {
   const colorSels = el.querySelectorAll('.entry-zone-color');
   entry.zoneColors = Array.from(colorSels).map(s => s.value);
   return entry;
+}
+
+// Convert entry dimensions to total square feet regardless of input mode
+function getEntrySqFt(entry) {
+  if (entry.areaInputMode === 'wxl') {
+    return entry.width * entry.length;
+  } else if (entry.areaInputMode === 'sqft') {
+    return entry.areaValue;
+  } else if (entry.areaInputMode === 'sqyd') {
+    return entry.areaValue * SQFT_PER_SQYD;
+  } else if (entry.areaInputMode === 'sqm') {
+    return entry.areaValue * SQFT_PER_SQM;
+  }
+  return 0;
 }
 
 function fmt(n) {
@@ -731,24 +752,37 @@ function renderCourtEntries() {
           </div>
           <div class="form-row">
             <label>
+              <span>Area Input</span>
+              <select class="entry-area-mode">
+                <option value="wxl"${entry.areaInputMode === 'wxl' ? ' selected' : ''}>Width x Length (ft)</option>
+                <option value="sqft"${entry.areaInputMode === 'sqft' ? ' selected' : ''}>Square Feet</option>
+                <option value="sqyd"${entry.areaInputMode === 'sqyd' ? ' selected' : ''}>Square Yards</option>
+                <option value="sqm"${entry.areaInputMode === 'sqm' ? ' selected' : ''}>Square Meters</option>
+              </select>
+            </label>
+            <label class="entry-wxl-field${entry.areaInputMode !== 'wxl' ? ' hidden' : ''}">
               <span>Width (Feet)</span>
               <input class="entry-width input-highlight" type="number" min="0" step="0.1" value="${entry.width}" />
             </label>
-            <label>
+            <label class="entry-wxl-field${entry.areaInputMode !== 'wxl' ? ' hidden' : ''}">
               <span>Length (Feet)</span>
               <input class="entry-length input-highlight" type="number" min="0" step="0.1" value="${entry.length}" />
             </label>
+            <label class="entry-direct-field${entry.areaInputMode === 'wxl' ? ' hidden' : ''}">
+              <span>${{sqft:'Square Feet',sqyd:'Square Yards',sqm:'Square Meters'}[entry.areaInputMode] || 'Area'}</span>
+              <input class="entry-area-value input-highlight" type="number" min="0" step="0.1" value="${entry.areaValue}" />
+            </label>
             <label>
               <span>Total Sq Ft</span>
-              <input class="entry-sqft" type="text" readonly value="${fmt(entry.width * entry.length)}" />
+              <input class="entry-sqft" type="text" readonly value="${fmt(getEntrySqFt(entry))}" />
             </label>
             <label>
               <span>Total Sq Yd</span>
-              <input class="entry-sqyd" type="text" readonly value="${fmt(entry.width * entry.length / SQFT_PER_SQYD)}" />
+              <input class="entry-sqyd" type="text" readonly value="${fmt(getEntrySqFt(entry) / SQFT_PER_SQYD)}" />
             </label>
             <label>
               <span>Total Sq M</span>
-              <input class="entry-sqm" type="text" readonly value="${fmt(entry.width * entry.length / SQFT_PER_SQM)}" />
+              <input class="entry-sqm" type="text" readonly value="${fmt(getEntrySqFt(entry) / SQFT_PER_SQM)}" />
             </label>
           </div>
           <div class="form-row">${zoneColorsHtml}</div>
@@ -770,6 +804,7 @@ function renderCourtEntries() {
       entry.courtType = newType;
       entry.width = newDef.defaultWidth;
       entry.length = newDef.defaultLength;
+      entry.areaValue = newDef.defaultWidth * newDef.defaultLength;
       entry.numCourts = newType === 'totalArea' ? 1 : entry.numCourts;
       entry.zoneColors = newDef.zones.map((z, i) => i === 0 ? 'Light Blue ColorPlus' : 'Blue ColorPlus');
       renderCourtEntries();
@@ -790,7 +825,7 @@ function renderCourtEntries() {
     const onFieldChange = () => {
       readEntryFromDOM(entry);
       // Update computed area fields
-      const sqft = entry.width * entry.length;
+      const sqft = getEntrySqFt(entry);
       card.querySelector('.entry-sqft').value = fmt(sqft);
       card.querySelector('.entry-sqyd').value = fmt(sqft / SQFT_PER_SQYD);
       card.querySelector('.entry-sqm').value = fmt(sqft / SQFT_PER_SQM);
@@ -804,10 +839,32 @@ function renderCourtEntries() {
     };
 
     card.querySelectorAll('input, select').forEach(el => {
-      if (!el.classList.contains('entry-court-type')) {
+      if (!el.classList.contains('entry-court-type') && !el.classList.contains('entry-area-mode')) {
         el.addEventListener('input', onFieldChange);
         el.addEventListener('change', onFieldChange);
       }
+    });
+
+    // Event: area input mode change → show/hide W×L vs direct area fields
+    card.querySelector('.entry-area-mode').addEventListener('change', () => {
+      entry.areaInputMode = card.querySelector('.entry-area-mode').value;
+      // When switching modes, convert current area to new unit as default
+      const currentSqFt = getEntrySqFt(entry);
+      if (entry.areaInputMode === 'wxl') {
+        // Keep existing width/length or approximate from area
+        if (!entry.width || !entry.length) {
+          entry.width = Math.round(Math.sqrt(currentSqFt));
+          entry.length = entry.width > 0 ? Math.round(currentSqFt / entry.width) : 0;
+        }
+      } else if (entry.areaInputMode === 'sqft') {
+        entry.areaValue = Math.round(currentSqFt * 100) / 100;
+      } else if (entry.areaInputMode === 'sqyd') {
+        entry.areaValue = Math.round((currentSqFt / SQFT_PER_SQYD) * 100) / 100;
+      } else if (entry.areaInputMode === 'sqm') {
+        entry.areaValue = Math.round((currentSqFt / SQFT_PER_SQM) * 100) / 100;
+      }
+      renderCourtEntries();
+      renderResults();
     });
 
     // Event: mix type change → lock/unlock packaging
