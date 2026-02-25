@@ -698,6 +698,18 @@ function renderCourtEntries() {
               <span>Length (Feet)</span>
               <input class="entry-length input-highlight" type="number" min="0" step="0.1" value="${entry.length}" />
             </label>
+            <label>
+              <span>Total Sq Ft</span>
+              <input class="entry-sqft" type="text" readonly value="${fmt(entry.width * entry.length)}" />
+            </label>
+            <label>
+              <span>Total Sq Yd</span>
+              <input class="entry-sqyd" type="text" readonly value="${fmt(entry.width * entry.length / SQFT_PER_SQYD)}" />
+            </label>
+            <label>
+              <span>Total Sq M</span>
+              <input class="entry-sqm" type="text" readonly value="${fmt(entry.width * entry.length / SQFT_PER_SQM)}" />
+            </label>
           </div>
           <div class="form-row">${zoneColorsHtml}</div>
         </div>
@@ -737,6 +749,11 @@ function renderCourtEntries() {
     // Events: field changes → update preview + results
     const onFieldChange = () => {
       readEntryFromDOM(entry);
+      // Update computed area fields
+      const sqft = entry.width * entry.length;
+      card.querySelector('.entry-sqft').value = fmt(sqft);
+      card.querySelector('.entry-sqyd').value = fmt(sqft / SQFT_PER_SQYD);
+      card.querySelector('.entry-sqm').value = fmt(sqft / SQFT_PER_SQM);
       // Update preview inline (fast)
       const previewDiv = card.querySelector('.preview-svg');
       const legendDiv = card.querySelector('.preview-legend');
