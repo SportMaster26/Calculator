@@ -661,6 +661,14 @@ function getEntrySqFt(entry) {
   return 0;
 }
 
+// Return total area in the user's selected unit for display
+function getEntryDisplayArea(entry) {
+  const sqft = getEntrySqFt(entry);
+  if (entry.areaInputMode === 'sqyd') return sqft / SQFT_PER_SQYD;
+  if (entry.areaInputMode === 'sqm') return sqft / SQFT_PER_SQM;
+  return sqft; // wxl and sqft both display as sq ft
+}
+
 function fmt(n) {
   if (typeof n !== 'number' || isNaN(n)) return n;
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
@@ -773,16 +781,8 @@ function renderCourtEntries() {
               <input class="entry-area-value input-highlight" type="number" min="0" step="0.1" value="${entry.areaValue}" />
             </label>
             <label>
-              <span>Total Sq Ft</span>
-              <input class="entry-sqft" type="text" readonly value="${fmt(getEntrySqFt(entry))}" />
-            </label>
-            <label>
-              <span>Total Sq Yd</span>
-              <input class="entry-sqyd" type="text" readonly value="${fmt(getEntrySqFt(entry) / SQFT_PER_SQYD)}" />
-            </label>
-            <label>
-              <span>Total Sq M</span>
-              <input class="entry-sqm" type="text" readonly value="${fmt(getEntrySqFt(entry) / SQFT_PER_SQM)}" />
+              <span>Total ${({wxl:'Sq Ft',sqft:'Sq Ft',sqyd:'Sq Yd',sqm:'Sq M'})[entry.areaInputMode]}</span>
+              <input class="entry-total-area" type="text" readonly value="${fmt(getEntryDisplayArea(entry))}" />
             </label>
           </div>
           <div class="form-row">${zoneColorsHtml}</div>
@@ -824,11 +824,8 @@ function renderCourtEntries() {
     // Events: field changes → update preview + results
     const onFieldChange = () => {
       readEntryFromDOM(entry);
-      // Update computed area fields
-      const sqft = getEntrySqFt(entry);
-      card.querySelector('.entry-sqft').value = fmt(sqft);
-      card.querySelector('.entry-sqyd').value = fmt(sqft / SQFT_PER_SQYD);
-      card.querySelector('.entry-sqm').value = fmt(sqft / SQFT_PER_SQM);
+      // Update computed total area field in the selected unit
+      card.querySelector('.entry-total-area').value = fmt(getEntryDisplayArea(entry));
       // Update preview inline (fast)
       const previewDiv = card.querySelector('.preview-svg');
       const legendDiv = card.querySelector('.preview-legend');
