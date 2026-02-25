@@ -1047,4 +1047,144 @@ function init() {
   $('surfaceType').addEventListener('change', renderResults);
 }
 
+// ────────────────────────────────────────────────────────
+// PRINT / DOWNLOAD PDF — consolidated materials list
+// ────────────────────────────────────────────────────────
+
+function collectAllMaterials() {
+  const surfaceType = $('surfaceType').value;
+  const materials = {};  // key: product name → { product, coats, gallons, packaging, item }
+
+  function addMaterial(product, coats, gallons, packaging, item) {
+    // Skip empty or header-only rows
+    if (!product) return;
+    const key = product + '||' + item;
+    if (materials[key]) {
+      if (typeof gallons === 'number' && typeof materials[key].gallons === 'number') {
+        materials[key].gallons += gallons;
+      }
+    } else {
+      materials[key] = { product, coats, gallons, packaging, item };
+    }
+  }
+
+  const entryResults = courtEntries.map(entry => {
+    const result = calculateEntry(entry, surfaceType, entry.packaging, entry.mixType);
+    result.packaging = entry.packaging;
+    result.mixType = entry.mixType;
+    result.cushionSystem = entry.cushionSystem;
+    result.crackFiller = entry.crackFiller;
+    result.crackLinearFeet = entry.crackLinearFeet;
+    return result;
+  });
+
+  // Total area materials (resurfacer)
+  entryResults.forEach(r => {
+    const g = calculateGlobalProducts(r.totalSqFt, surfaceType, r.packaging, r.mixType);
+    for (const item of g.totalArea) {
+      addMaterial(item.product, item.coats, item.gallons, item.packaging, item.item);
+    }
+    // Cushion
+    if (r.cushionSystem !== 'none') {
+      const selectedLabel = r.cushionSystem === 'standard' ? 'Standard System' : 'Premium System';
+      const selected = g.cushion.find(s => s.system === selectedLabel);
+      if (selected) {
+        for (const item of selected.items) {
+          addMaterial(item.product, item.coats, item.gallons, item.packaging, item.item);
+        }
+      }
+    }
+  });
+
+  // Zone products
+  entryResults.forEach(r => {
+    for (const zone of r.zones) {
+      for (const p of zone.products) {
+        addMaterial(p.product, p.coats, p.gallons, p.packaging, p.item);
+      }
+    }
+  });
+
+  // Striping
+  entryResults.forEach(r => {
+    for (const s of r.striping) {
+      addMaterial(s.product, s.coats, s.gallons, s.packaging, s.item);
+    }
+  });
+
+  // Crack filler
+  entryResults.forEach(r => {
+    if (r.crackFiller && r.crackLinearFeet > 0) {
+      crackFillers.forEach(f => {
+        const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
+        addMaterial(f.product, '', gallons, gallons + ' gallon' + (gallons !== 1 ? 's' : ''), '');
+      });
+    }
+  });
+
+  return { materials: Object.values(materials), entryResults };
+}
+
+function printMaterialsList() {
+  const surfaceType = $('surfaceType').value;
+  const surfaceLabel = { concrete: 'New Concrete', asphalt: 'New Asphalt', existingConcrete: 'Existing Concrete', existingAsphalt: 'Existing Asphalt' }[surfaceType];
+  const { materials, entryResults } = collectAllMaterials();
+
+  const totalSqFt = entryResults.reduce((sum, r) => sum + r.totalSqFt, 0);
+  const courtSummary = courtEntries.map(e => {
+    const def = courtDefs[e.courtType];
+    return e.numCourts + ' ' + def.label + (e.numCourts > 1 ? 's' : '');
+  }).join(', ');
+
+  let tableRows = '';
+  materials.forEach(m => {
+    tableRows += '<tr>';
+    tableRows += '<td>' + m.product + '</td>';
+    tableRows += '<td>' + (m.coats || '') + '</td>';
+    tableRows += '<td>' + (typeof m.gallons === 'number' ? fmt(m.gallons) : (m.gallons || '')) + '</td>';
+    tableRows += '<td>' + (m.packaging || '') + '</td>';
+    tableRows += '<td>' + (m.item || '') + '</td>';
+    tableRows += '</tr>';
+  });
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SportMaster Materials List</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #2c3e50; padding: 32px; }
+    h1 { font-size: 1.4rem; color: #1a5276; margin-bottom: 4px; }
+    .subtitle { font-size: 0.9rem; color: #5d6d7e; margin-bottom: 20px; }
+    .info { font-size: 0.85rem; color: #2c3e50; margin-bottom: 16px; }
+    .info strong { color: #1a5276; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 12px; }
+    th { background: #1a5276; color: #fff; padding: 8px 10px; text-align: left; font-size: 0.78rem; text-transform: uppercase; }
+    td { padding: 7px 10px; border-bottom: 1px solid #d5dbdb; }
+    tr:nth-child(even) { background: #f7f9fb; }
+    .footer { margin-top: 24px; font-size: 0.75rem; color: #5d6d7e; border-top: 1px solid #d5dbdb; padding-top: 12px; }
+    @media print { body { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <h1>SportMaster — Total Materials Needed</h1>
+  <p class="subtitle">Generated ${new Date().toLocaleDateString()}</p>
+  <p class="info"><strong>Courts:</strong> ${courtSummary} &nbsp;|&nbsp; <strong>Surface:</strong> ${surfaceLabel} &nbsp;|&nbsp; <strong>Total Area:</strong> ${fmt(totalSqFt)} sq ft</p>
+  <table>
+    <thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+  <div class="footer">SportMaster Product Calculator — Coverage rates may vary. Consult ASBA standards for overrun requirements.</div>
+  <script>window.onload = function() { window.print(); };<\/script>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(html);
+  printWindow.document.close();
+}
+
 init();
+
+// Bind print button
+$('printMaterialsBtn').addEventListener('click', printMaterialsList);

@@ -309,6 +309,30 @@ tbody tr:hover {
   background: #fde8e8;
 }
 
+/* ── Print / Download Button ── */
+.btn-print {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.02em;
+}
+.btn-print:hover {
+  background: var(--accent-light);
+}
+
+/* ── Print Media ── */
+@media print {
+  .no-print { display: none !important; }
+}
+
 /* ── Responsive ── */
 @media (max-width: 700px) {
   .entry-body {
