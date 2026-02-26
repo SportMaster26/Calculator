@@ -322,10 +322,12 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
   const pkgSize = getPackageSize(packaging);
   const zoneAreas = computeZoneAreas(entry.courtType, totalSqFt, entry.numCourts);
 
-  const zones = [];
+  // ── First pass: compute raw gallons per zone per product and aggregate totals ──
+  const zoneRawData = [];
+  const productTotalGallons = {}; // prodName → total gallons across all zones
+
   zoneAreas.forEach((zone, zi) => {
     if (zone.sqft <= 0) return;
-    const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
     const colorName = entry.zoneColors[zi] || 'Not Selected';
     const prods = mixType === 'ready'
       ? getZoneProductsRTU(entry.courtType, zone.name)
@@ -333,31 +335,40 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         ? getZoneProductsConcWithSand(entry.courtType, zone.name)
         : getZoneProductsConc(entry.courtType, zone.name);
 
+    const rawProducts = [];
     for (const [prodName, coats] of prods) {
-      // Ready Mix / PickleMaster RTU only come in 5-gallon pails — skip when drums or kegs selected
       if ((prodName === 'Ready Mix' || prodName === 'PickleMaster RTU') && packaging !== '5') continue;
-
       const rate = getCoverageRate(prodName, surfaceType, mixType);
       const gallons = calcGallons(rate, zone.sqyd, coats);
-      const packages = calcPackages(gallons, pkgSize);
+      rawProducts.push({ prodName, coats, gallons });
+      productTotalGallons[prodName] = (productTotalGallons[prodName] || 0) + gallons;
+    }
+    zoneRawData.push({ zone, zi, colorName, rawProducts });
+  });
 
+  // ── Compute total packages per product from aggregated gallons ──
+  const productTotalPkgs = {};
+  for (const prodName of Object.keys(productTotalGallons)) {
+    productTotalPkgs[prodName] = calcPackages(productTotalGallons[prodName], pkgSize);
+  }
+
+  // ── Second pass: build zone results (per-zone gallons + per-zone ColorPlus) ──
+  const zones = [];
+  zoneRawData.forEach(({ zone, zi, colorName, rawProducts }) => {
+    const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
+
+    for (const { prodName, coats, gallons } of rawProducts) {
+      // Base product: show gallons per zone, packaging left blank (shown in total row)
       zoneResult.products.push({
         product: prodName, coats, gallons,
-        packaging: fmtPkg(packages, packaging),
+        packaging: '',
         item: getItemNumber(prodName, packaging, mixType)
       });
 
-      if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
-        const sandLbs = getColorSandLbs(packages, packaging);
-        const sandBags = Math.ceil(sandLbs / 50);
-        zoneResult.products.push({
-          product: 'Color Sand (80-90 Mesh)', coats: '', gallons: sandLbs + ' lbs',
-          packaging: sandBags + ' - 50 lbs. Bags', item: 'R1010'
-        });
-      }
-
+      // ColorPlus per zone: based on zone's own gallons
       if (colorName !== 'Not Selected') {
-        const cpCount = getColorPlusCount(packages, packaging, prodName);
+        const zonePackages = calcPackages(gallons, pkgSize);
+        const cpCount = getColorPlusCount(zonePackages, packaging, prodName);
         const cpUnit = getColorPlusUnit(packaging, prodName);
         const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
         if (cpCount > 0) {
@@ -370,6 +381,29 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     }
     zones.push(zoneResult);
   });
+
+  // ── Build total packaging summary (aggregated across all zones) ──
+  const zoneTotalPackaging = [];
+  for (const [prodName, totalGal] of Object.entries(productTotalGallons)) {
+    const totalPkgs = productTotalPkgs[prodName];
+    zoneTotalPackaging.push({
+      product: prodName,
+      gallons: totalGal,
+      packaging: fmtPkg(totalPkgs, packaging),
+      item: getItemNumber(prodName, packaging, mixType)
+    });
+    // Sand for concentrate — aggregated at total level
+    if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
+      const sandLbs = getColorSandLbs(totalPkgs, packaging);
+      const sandBags = Math.ceil(sandLbs / 50);
+      zoneTotalPackaging.push({
+        product: 'Color Sand (80-90 Mesh)',
+        gallons: sandLbs + ' lbs',
+        packaging: sandBags + ' - 50 lbs. Bags',
+        item: 'R1010'
+      });
+    }
+  }
 
   // Striping
   const striping = [];
@@ -394,6 +428,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     totalSqYd,
     zoneAreas,
     zones,
+    zoneTotalPackaging,
     striping
   };
 }
@@ -964,7 +999,14 @@ function renderResults() {
       if (zone.products.length === 0) continue;
       zoneHtml += `<tr class="zone-subheader"><td colspan="5">${zone.name} (${fmt(zone.sqft)} sq ft)</td></tr>`;
       for (const p of zone.products) {
-        zoneHtml += `<tr><td>${p.product}</td><td>${p.coats}</td><td>${p.gallons}</td><td>${p.packaging}</td><td>${p.item}</td></tr>`;
+        zoneHtml += `<tr><td>${p.product}</td><td>${p.coats}</td><td>${typeof p.gallons === 'number' ? fmt(p.gallons) : p.gallons}</td><td>${p.packaging}</td><td>${p.item}</td></tr>`;
+      }
+    }
+    // Total packaging row — aggregated across all zones for this court
+    if (r.zoneTotalPackaging && r.zoneTotalPackaging.length > 0) {
+      zoneHtml += `<tr class="zone-subheader"><td colspan="5">Total Packaging Needed</td></tr>`;
+      for (const t of r.zoneTotalPackaging) {
+        zoneHtml += `<tr><td>${t.product}</td><td></td><td>${typeof t.gallons === 'number' ? fmt(t.gallons) : t.gallons}</td><td>${t.packaging}</td><td>${t.item}</td></tr>`;
       }
     }
   });
@@ -1096,11 +1138,20 @@ function collectAllMaterials() {
     }
   });
 
-  // Zone products
+  // Zone products — use aggregated total packaging for base products, per-zone for ColorPlus
   entryResults.forEach(r => {
+    // Add per-zone ColorPlus (non-base products with packaging)
     for (const zone of r.zones) {
       for (const p of zone.products) {
-        addMaterial(p.product, p.coats, p.gallons, p.packaging, p.item);
+        if (p.packaging) {
+          addMaterial(p.product, p.coats, p.gallons, p.packaging, p.item);
+        }
+      }
+    }
+    // Add aggregated base product totals
+    if (r.zoneTotalPackaging) {
+      for (const t of r.zoneTotalPackaging) {
+        addMaterial(t.product, '', t.gallons, t.packaging, t.item);
       }
     }
   });
