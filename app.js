@@ -243,7 +243,7 @@ function fmtPkg(count, packaging) {
 
 function calcGallons(coverageRate, areaSqYd, coats) {
   if (!coverageRate || !areaSqYd || !coats) return 0;
-  return coverageRate * areaSqYd * coats;
+  return Math.ceil(coverageRate * areaSqYd * coats);
 }
 
 function calcPackages(gallons, packageSize) {
@@ -352,31 +352,50 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     productTotalPkgs[prodName] = calcPackages(productTotalGallons[prodName], pkgSize);
   }
 
-  // ── Second pass: build zone results (per-zone gallons + per-zone ColorPlus) ──
+  // ── Collect all unique colors used across zones (for total-level ColorPlus) ──
+  const colorsByProduct = {}; // prodName → { colorName, packaging, prodName }
+  zoneRawData.forEach(({ colorName, rawProducts }) => {
+    if (colorName === 'Not Selected') return;
+    for (const { prodName } of rawProducts) {
+      if (!colorsByProduct[prodName]) colorsByProduct[prodName] = colorName;
+    }
+  });
+
+  const isReadyMix = mixType === 'ready';
+
+  // ── Second pass: build zone results ──
   const zones = [];
   zoneRawData.forEach(({ zone, zi, colorName, rawProducts }) => {
     const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
 
     for (const { prodName, coats, gallons } of rawProducts) {
-      // Base product: show gallons per zone, packaging left blank (shown in total row)
-      zoneResult.products.push({
-        product: prodName, coats, gallons,
-        packaging: '',
-        item: getItemNumber(prodName, packaging, mixType)
-      });
-
-      // ColorPlus per zone: based on zone's own gallons
-      if (colorName !== 'Not Selected') {
+      if (isReadyMix) {
+        // Ready Mix: show packaging inline per zone, no separate total row
         const zonePackages = calcPackages(gallons, pkgSize);
-        const cpCount = getColorPlusCount(zonePackages, packaging, prodName);
-        const cpUnit = getColorPlusUnit(packaging, prodName);
-        const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
-        if (cpCount > 0) {
-          zoneResult.products.push({
-            product: colorName, coats: '', gallons: '',
-            packaging: cpCount + ' - ' + cpUnit, item: cpItem
-          });
+        zoneResult.products.push({
+          product: prodName, coats, gallons,
+          packaging: fmtPkg(zonePackages, packaging),
+          item: getItemNumber(prodName, packaging, mixType)
+        });
+        // Ready Mix ColorPlus per zone (1 jar per pail)
+        if (colorName !== 'Not Selected') {
+          const cpCount = getColorPlusCount(zonePackages, packaging, prodName);
+          const cpUnit = getColorPlusUnit(packaging, prodName);
+          const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
+          if (cpCount > 0) {
+            zoneResult.products.push({
+              product: colorName, coats: '', gallons: '',
+              packaging: cpCount + ' - ' + cpUnit, item: cpItem
+            });
+          }
         }
+      } else {
+        // Concentrate / ConcWithSand: show gallons per zone, packaging in total row
+        zoneResult.products.push({
+          product: prodName, coats, gallons,
+          packaging: '',
+          item: getItemNumber(prodName, packaging, mixType)
+        });
       }
     }
     zones.push(zoneResult);
@@ -384,24 +403,39 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
 
   // ── Build total packaging summary (aggregated across all zones) ──
   const zoneTotalPackaging = [];
-  for (const [prodName, totalGal] of Object.entries(productTotalGallons)) {
-    const totalPkgs = productTotalPkgs[prodName];
-    zoneTotalPackaging.push({
-      product: prodName,
-      gallons: totalGal,
-      packaging: fmtPkg(totalPkgs, packaging),
-      item: getItemNumber(prodName, packaging, mixType)
-    });
-    // Sand for concentrate — aggregated at total level
-    if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
-      const sandLbs = getColorSandLbs(totalPkgs, packaging);
-      const sandBags = Math.ceil(sandLbs / 50);
+  if (!isReadyMix) {
+    for (const [prodName, totalGal] of Object.entries(productTotalGallons)) {
+      const totalPkgs = productTotalPkgs[prodName];
       zoneTotalPackaging.push({
-        product: 'Color Sand (80-90 Mesh)',
-        gallons: sandLbs + ' lbs',
-        packaging: sandBags + ' - 50 lbs. Bags',
-        item: 'R1010'
+        product: prodName,
+        gallons: totalGal,
+        packaging: fmtPkg(totalPkgs, packaging),
+        item: getItemNumber(prodName, packaging, mixType)
       });
+      // ColorPlus from total pails (not per-zone) — jars match pails
+      const colorName = colorsByProduct[prodName];
+      if (colorName) {
+        const cpCount = getColorPlusCount(totalPkgs, packaging, prodName);
+        const cpUnit = getColorPlusUnit(packaging, prodName);
+        const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
+        if (cpCount > 0) {
+          zoneTotalPackaging.push({
+            product: colorName, coats: '', gallons: '',
+            packaging: cpCount + ' - ' + cpUnit, item: cpItem
+          });
+        }
+      }
+      // Sand for concentrate — aggregated at total level
+      if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
+        const sandLbs = getColorSandLbs(totalPkgs, packaging);
+        const sandBags = Math.ceil(sandLbs / 50);
+        zoneTotalPackaging.push({
+          product: 'Color Sand (80-90 Mesh)',
+          gallons: sandLbs + ' lbs',
+          packaging: sandBags + ' - 50 lbs. Bags',
+          item: 'R1010'
+        });
+      }
     }
   }
 
@@ -985,7 +1019,7 @@ function renderResults() {
       totalAreaHtml += `<tr class="zone-header"><td colspan="5">${g.label}</td></tr>`;
     }
     for (const r of g.items) {
-      totalAreaHtml += `<tr><td>${r.product}</td><td>${r.coats}</td><td>${typeof r.gallons === 'number' ? fmt(r.gallons) : r.gallons}</td><td>${r.packaging}</td><td>${r.item}</td></tr>`;
+      totalAreaHtml += `<tr><td>${r.product}</td><td>${r.coats}</td><td>${r.gallons}</td><td>${r.packaging}</td><td>${r.item}</td></tr>`;
     }
   });
   $('totalAreaBody').innerHTML = totalAreaHtml;
@@ -1025,7 +1059,7 @@ function renderResults() {
     if (selected) {
       cushionHtml += `<tr class="zone-header"><td colspan="5">${g.label} — ${selectedLabel}</td></tr>`;
       for (const item of selected.items) {
-        cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${typeof item.gallons === 'number' ? fmt(item.gallons) : item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
+        cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
       }
     }
   });
@@ -1065,11 +1099,9 @@ function renderCrackFillers(entryResults) {
     const radioName = 'crackSelect_' + ri;
     const selected = r.crackFillerType || crackFillers[0].product;
     crackFillers.forEach((f, fi) => {
-      const gallons = r.crackLinearFeet / f.rateMin;
-      const displayGal = fmt(gallons);
-      const pkgCount = Math.ceil(gallons);
-      const estimate = displayGal + ' gallon' + (gallons !== 1 ? 's' : '');
-      const packaging = pkgCount + '- 1 Gallon Jug(s)';
+      const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
+      const estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
+      const packaging = gallons + '- 1 Gallon Jug(s)';
       const checked = f.product === selected ? ' checked' : '';
       html += `<tr>`;
       html += `<td><input type="radio" name="${radioName}" value="${f.product}" data-entry-idx="${ri}"${checked}></td>`;
@@ -1195,9 +1227,8 @@ function collectAllMaterials() {
   entryResults.forEach(r => {
     if (r.crackFiller && r.crackLinearFeet > 0) {
       const f = crackFillers.find(cf => cf.product === r.crackFillerType) || crackFillers[0];
-      const gallons = r.crackLinearFeet / f.rateMin;
-      const pkgCount = Math.ceil(gallons);
-      addMaterial(f.product, '', gallons, pkgCount + '- 1 Gallon Jug(s)', f.item);
+      const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
+      addMaterial(f.product, '', gallons, gallons + '- 1 Gallon Jug(s)', f.item);
     }
   });
 
