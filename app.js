@@ -1004,7 +1004,7 @@ function renderResults() {
     }
     // Total packaging row — aggregated across all zones for this court
     if (r.zoneTotalPackaging && r.zoneTotalPackaging.length > 0) {
-      zoneHtml += `<tr class="zone-subheader"><td colspan="5">Total Packaging Needed</td></tr>`;
+      zoneHtml += `<tr class="total-packaging-header"><td colspan="5">Total Packaging Needed</td></tr>`;
       for (const t of r.zoneTotalPackaging) {
         zoneHtml += `<tr><td>${t.product}</td><td></td><td>${typeof t.gallons === 'number' ? fmt(t.gallons) : t.gallons}</td><td>${t.packaging}</td><td>${t.item}</td></tr>`;
       }

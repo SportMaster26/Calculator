@@ -198,6 +198,14 @@ tbody tr:hover {
   border-bottom: 1px solid var(--accent-pale);
   font-size: 0.84rem;
 }
+.total-packaging-header td {
+  background: #1a5276;
+  color: #fff;
+  font-weight: 700;
+  padding: 8px 10px;
+  font-size: 0.84rem;
+  border-bottom: 2px solid var(--accent-light);
+}
 
 /* ── Court Entry Cards ── */
 .court-entry-card {
