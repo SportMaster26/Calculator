@@ -403,6 +403,18 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           packaging: '',
           item: getItemNumber(prodName, packaging, mixType)
         });
+        // ColorPlus per zone — based on split logic
+        if (colorName !== 'Not Selected') {
+          const cpCount = getColorPlusForZone(gallons, packaging, prodName);
+          const cpUnit = getColorPlusUnit(packaging, prodName);
+          const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
+          if (cpCount > 0) {
+            zoneResult.products.push({
+              product: colorName, coats: '', gallons: '',
+              packaging: cpCount + ' - ' + cpUnit, item: cpItem
+            });
+          }
+        }
       }
     }
     zones.push(zoneResult);
@@ -419,23 +431,6 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         packaging: fmtPkg(totalPkgs, packaging),
         item: getItemNumber(prodName, packaging, mixType)
       });
-      // ColorPlus per zone — based on split logic (how many splits each zone fills)
-      for (const { zone, colorName, rawProducts } of zoneRawData) {
-        if (colorName === 'Not Selected') continue;
-        for (const { prodName: pn, gallons } of rawProducts) {
-          if (pn !== prodName) continue;
-          const cpCount = getColorPlusForZone(gallons, packaging, pn);
-          const cpUnit = getColorPlusUnit(packaging, pn);
-          const cpItem = getColorPlusItemNumber(colorName, packaging, pn);
-          if (cpCount > 0) {
-            zoneTotalPackaging.push({
-              product: colorName + ' (' + zone.name + ')',
-              coats: '', gallons: '',
-              packaging: cpCount + ' - ' + cpUnit, item: cpItem
-            });
-          }
-        }
-      }
       // Sand for concentrate — aggregated at total level
       if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
         const sandLbs = getColorSandLbs(totalPkgs, packaging);
