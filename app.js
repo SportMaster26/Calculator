@@ -259,14 +259,33 @@ function getColorSandLbs(packages, packaging) {
   return packages * mult;
 }
 
-// ColorPlus quantity per package
-function getColorPlusCount(packages, packaging, productName) {
-  // Ready Mix: 1 jar per 5-gal pail
+// ColorPlus quantity based on zone gallons and packaging split logic
+// 5-gal pails:  2 jars per pail  (Ready Mix / RTU: 1 jar per pail)
+// 30-gal kegs:  split into 2 × 15 gal — 1 gallon ColorPlus per split
+// 55-gal drums: split into 2 × 27.5 gal — 2 gallons ColorPlus per split
+function getColorPlusForZone(zoneGallons, packaging, productName) {
+  if (!zoneGallons || zoneGallons <= 0) return 0;
+  const pkg = parseInt(packaging);
   if (productName === 'Ready Mix' || productName === 'PickleMaster RTU') {
-    return packages * 1;
+    // Pails only: 1 jar per pail
+    return Math.ceil(zoneGallons / 5);
   }
-  const mult = { 5: 2, 30: 2, 55: 4 }[packaging] || 0;
-  return packages * mult;
+  if (pkg === 5) {
+    // 2 jars per 5-gal pail
+    const pails = Math.ceil(zoneGallons / 5);
+    return pails * 2;
+  }
+  if (pkg === 30) {
+    // 1 gallon ColorPlus per 15-gal split
+    const splits = Math.ceil(zoneGallons / 15);
+    return splits;
+  }
+  if (pkg === 55) {
+    // 2 gallons ColorPlus per 27.5-gal split
+    const splits = Math.ceil(zoneGallons / 27.5);
+    return splits * 2;
+  }
+  return 0;
 }
 
 function getColorPlusUnit(packaging, productName) {
@@ -367,7 +386,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           item: getItemNumber(prodName, packaging, mixType)
         });
         if (colorName !== 'Not Selected') {
-          const cpCount = getColorPlusCount(zonePackages, packaging, prodName);
+          const cpCount = getColorPlusForZone(gallons, packaging, prodName);
           const cpUnit = getColorPlusUnit(packaging, prodName);
           const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
           if (cpCount > 0) {
@@ -400,18 +419,18 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         packaging: fmtPkg(totalPkgs, packaging),
         item: getItemNumber(prodName, packaging, mixType)
       });
-      // ColorPlus per zone's color (each zone gets its own color entry)
-      for (const { colorName, rawProducts } of zoneRawData) {
+      // ColorPlus per zone — based on split logic (how many splits each zone fills)
+      for (const { zone, colorName, rawProducts } of zoneRawData) {
         if (colorName === 'Not Selected') continue;
         for (const { prodName: pn, gallons } of rawProducts) {
           if (pn !== prodName) continue;
-          const zonePkgs = calcPackages(gallons, pkgSize);
-          const cpCount = getColorPlusCount(zonePkgs, packaging, pn);
+          const cpCount = getColorPlusForZone(gallons, packaging, pn);
           const cpUnit = getColorPlusUnit(packaging, pn);
           const cpItem = getColorPlusItemNumber(colorName, packaging, pn);
           if (cpCount > 0) {
             zoneTotalPackaging.push({
-              product: colorName, coats: '', gallons: '',
+              product: colorName + ' (' + zone.name + ')',
+              coats: '', gallons: gallons + ' gal',
               packaging: cpCount + ' - ' + cpUnit, item: cpItem
             });
           }
