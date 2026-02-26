@@ -430,7 +430,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           if (cpCount > 0) {
             zoneTotalPackaging.push({
               product: colorName + ' (' + zone.name + ')',
-              coats: '', gallons: gallons + ' gal',
+              coats: '', gallons: '',
               packaging: cpCount + ' - ' + cpUnit, item: cpItem
             });
           }
