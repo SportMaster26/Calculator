@@ -243,7 +243,7 @@ function fmtPkg(count, packaging) {
 
 function calcGallons(coverageRate, areaSqYd, coats) {
   if (!coverageRate || !areaSqYd || !coats) return 0;
-  return Math.ceil(coverageRate * areaSqYd * coats);
+  return coverageRate * areaSqYd * coats;
 }
 
 function calcPackages(gallons, packageSize) {
@@ -985,7 +985,7 @@ function renderResults() {
       totalAreaHtml += `<tr class="zone-header"><td colspan="5">${g.label}</td></tr>`;
     }
     for (const r of g.items) {
-      totalAreaHtml += `<tr><td>${r.product}</td><td>${r.coats}</td><td>${r.gallons}</td><td>${r.packaging}</td><td>${r.item}</td></tr>`;
+      totalAreaHtml += `<tr><td>${r.product}</td><td>${r.coats}</td><td>${typeof r.gallons === 'number' ? fmt(r.gallons) : r.gallons}</td><td>${r.packaging}</td><td>${r.item}</td></tr>`;
     }
   });
   $('totalAreaBody').innerHTML = totalAreaHtml;
@@ -1025,7 +1025,7 @@ function renderResults() {
     if (selected) {
       cushionHtml += `<tr class="zone-header"><td colspan="5">${g.label} — ${selectedLabel}</td></tr>`;
       for (const item of selected.items) {
-        cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
+        cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${typeof item.gallons === 'number' ? fmt(item.gallons) : item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
       }
     }
   });
@@ -1065,9 +1065,11 @@ function renderCrackFillers(entryResults) {
     const radioName = 'crackSelect_' + ri;
     const selected = r.crackFillerType || crackFillers[0].product;
     crackFillers.forEach((f, fi) => {
-      const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
-      const estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
-      const packaging = gallons + '- 1 Gallon Jug(s)';
+      const gallons = r.crackLinearFeet / f.rateMin;
+      const displayGal = fmt(gallons);
+      const pkgCount = Math.ceil(gallons);
+      const estimate = displayGal + ' gallon' + (gallons !== 1 ? 's' : '');
+      const packaging = pkgCount + '- 1 Gallon Jug(s)';
       const checked = f.product === selected ? ' checked' : '';
       html += `<tr>`;
       html += `<td><input type="radio" name="${radioName}" value="${f.product}" data-entry-idx="${ri}"${checked}></td>`;
@@ -1193,8 +1195,9 @@ function collectAllMaterials() {
   entryResults.forEach(r => {
     if (r.crackFiller && r.crackLinearFeet > 0) {
       const f = crackFillers.find(cf => cf.product === r.crackFillerType) || crackFillers[0];
-      const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
-      addMaterial(f.product, '', gallons, gallons + '- 1 Gallon Jug(s)', f.item);
+      const gallons = r.crackLinearFeet / f.rateMin;
+      const pkgCount = Math.ceil(gallons);
+      addMaterial(f.product, '', gallons, pkgCount + '- 1 Gallon Jug(s)', f.item);
     }
   });
 
