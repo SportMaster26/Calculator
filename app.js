@@ -182,13 +182,11 @@ function getZoneProductsRTU(courtType, zoneName) {
 function getZoneProductsConcWithSand(courtType, zoneName) {
   if (courtType === 'pickleball') {
     return [
-      ['PickleMaster', 2],
-      ['PickleMaster RTU', 2]
+      ['PickleMaster', 2]
     ];
   }
   return [
-    ['Neutral Concentrate w/ Sand', 2],
-    ['Ready Mix', 2]
+    ['Neutral Concentrate w/ Sand', 2]
   ];
 }
 
@@ -352,16 +350,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     productTotalPkgs[prodName] = calcPackages(productTotalGallons[prodName], pkgSize);
   }
 
-  // ── Collect all unique colors used across zones (for total-level ColorPlus) ──
-  const colorsByProduct = {}; // prodName → { colorName, packaging, prodName }
-  zoneRawData.forEach(({ colorName, rawProducts }) => {
-    if (colorName === 'Not Selected') return;
-    for (const { prodName } of rawProducts) {
-      if (!colorsByProduct[prodName]) colorsByProduct[prodName] = colorName;
-    }
-  });
-
-  const isReadyMix = mixType === 'ready';
+  const showPerZone = packaging === '5'; // pails: show per-zone; kegs/drums: show totals
 
   // ── Second pass: build zone results ──
   const zones = [];
@@ -369,15 +358,14 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
 
     for (const { prodName, coats, gallons } of rawProducts) {
-      if (isReadyMix) {
-        // Ready Mix: show packaging inline per zone, no separate total row
+      if (showPerZone) {
+        // Pails: show packaging + ColorPlus per zone with each zone's own color
         const zonePackages = calcPackages(gallons, pkgSize);
         zoneResult.products.push({
           product: prodName, coats, gallons,
           packaging: fmtPkg(zonePackages, packaging),
           item: getItemNumber(prodName, packaging, mixType)
         });
-        // Ready Mix ColorPlus per zone (1 jar per pail)
         if (colorName !== 'Not Selected') {
           const cpCount = getColorPlusCount(zonePackages, packaging, prodName);
           const cpUnit = getColorPlusUnit(packaging, prodName);
@@ -390,7 +378,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           }
         }
       } else {
-        // Concentrate / ConcWithSand: show gallons per zone, packaging in total row
+        // Kegs/Drums: show gallons per zone, packaging in total row
         zoneResult.products.push({
           product: prodName, coats, gallons,
           packaging: '',
@@ -401,9 +389,9 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     zones.push(zoneResult);
   });
 
-  // ── Build total packaging summary (aggregated across all zones) ──
+  // ── Build total packaging summary (only for kegs/drums) ──
   const zoneTotalPackaging = [];
-  if (!isReadyMix) {
+  if (!showPerZone) {
     for (const [prodName, totalGal] of Object.entries(productTotalGallons)) {
       const totalPkgs = productTotalPkgs[prodName];
       zoneTotalPackaging.push({
@@ -412,17 +400,21 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         packaging: fmtPkg(totalPkgs, packaging),
         item: getItemNumber(prodName, packaging, mixType)
       });
-      // ColorPlus from total pails (not per-zone) — jars match pails
-      const colorName = colorsByProduct[prodName];
-      if (colorName) {
-        const cpCount = getColorPlusCount(totalPkgs, packaging, prodName);
-        const cpUnit = getColorPlusUnit(packaging, prodName);
-        const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
-        if (cpCount > 0) {
-          zoneTotalPackaging.push({
-            product: colorName, coats: '', gallons: '',
-            packaging: cpCount + ' - ' + cpUnit, item: cpItem
-          });
+      // ColorPlus per zone's color (each zone gets its own color entry)
+      for (const { colorName, rawProducts } of zoneRawData) {
+        if (colorName === 'Not Selected') continue;
+        for (const { prodName: pn, gallons } of rawProducts) {
+          if (pn !== prodName) continue;
+          const zonePkgs = calcPackages(gallons, pkgSize);
+          const cpCount = getColorPlusCount(zonePkgs, packaging, pn);
+          const cpUnit = getColorPlusUnit(packaging, pn);
+          const cpItem = getColorPlusItemNumber(colorName, packaging, pn);
+          if (cpCount > 0) {
+            zoneTotalPackaging.push({
+              product: colorName, coats: '', gallons: '',
+              packaging: cpCount + ' - ' + cpUnit, item: cpItem
+            });
+          }
         }
       }
       // Sand for concentrate — aggregated at total level
