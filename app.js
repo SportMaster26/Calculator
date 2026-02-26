@@ -100,9 +100,9 @@ const colorHexMap = {
 
 // ── Crack filler reference ──
 const crackFillers = [
-  { product: 'Acrylic Crack Patch', rateLabel: '75 - 150 feet of Cracks', rateMin: 75, rateMax: 150, width: 'For Cracks up to 1" wide' },
-  { product: 'CrackMagic', rateLabel: '75 - 150 feet of Cracks', rateMin: 75, rateMax: 150, width: 'For Cracks up to 1/2" wide' },
-  { product: 'CourtFlex', rateLabel: '150 - 200 feet of Cracks', rateMin: 150, rateMax: 200, width: 'For Cracks up to 1/2" wide' }
+  { product: 'Acrylic Crack Patch', rateLabel: '75 - 150 feet of Cracks', rateMin: 75, rateMax: 150, width: 'For Cracks up to 1" wide', item: 'C1520G' },
+  { product: 'CrackMagic', rateLabel: '75 - 150 feet of Cracks', rateMin: 75, rateMax: 150, width: 'For Cracks up to 1/2" wide', item: 'C1590G' },
+  { product: 'CourtFlex', rateLabel: '150 - 200 feet of Cracks', rateMin: 150, rateMax: 200, width: 'For Cracks up to 1/2" wide', item: 'C1560G' }
 ];
 
 // ── Court type zone definitions ──
@@ -655,6 +655,7 @@ function createEntry(courtType) {
     mixType: 'ready',
     cushionSystem: 'none',
     crackFiller: false,
+    crackFillerType: 'Acrylic Crack Patch',
     crackLinearFeet: 0,
     zoneColors: def.zones.map((z, i) => i === 0 ? 'Light Blue ColorPlus' : 'Blue ColorPlus')
   };
@@ -676,6 +677,7 @@ function readEntryFromDOM(entry) {
   entry.mixType = el.querySelector('.entry-mix-type').value;
   entry.cushionSystem = el.querySelector('.entry-cushion').value;
   entry.crackFiller = el.querySelector('.entry-crack-filler').checked;
+  entry.crackFillerType = el.querySelector('.entry-crack-type').value;
   entry.crackLinearFeet = parseFloat(el.querySelector('.entry-crack-feet').value) || 0;
   const colorSels = el.querySelectorAll('.entry-zone-color');
   entry.zoneColors = Array.from(colorSels).map(s => s.value);
@@ -788,6 +790,12 @@ function renderCourtEntries() {
             </label>
           </div>
           <div class="form-row entry-crack-section${entry.crackFiller ? '' : ' hidden'}">
+            <label>
+              <span>Crack Filler Product</span>
+              <select class="entry-crack-type">
+                ${crackFillers.map(f => `<option value="${f.product}"${f.product === entry.crackFillerType ? ' selected' : ''}>${f.product}</option>`).join('')}
+              </select>
+            </label>
             <label>
               <span>Linear Feet of Cracks</span>
               <input class="entry-crack-feet" type="number" min="0" step="1" value="${entry.crackLinearFeet}" />
@@ -934,6 +942,7 @@ function renderResults() {
     result.mixType = entry.mixType;
     result.cushionSystem = entry.cushionSystem;
     result.crackFiller = entry.crackFiller;
+    result.crackFillerType = entry.crackFillerType;
     result.crackLinearFeet = entry.crackLinearFeet;
     return result;
   });
@@ -1060,12 +1069,12 @@ function renderCrackFillers(entryResults) {
 
   let html = '';
   crackEntries.forEach(r => {
-    crackFillers.forEach((f, fi) => {
-      const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
-      const estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
-      html += `<tr>${fi === 0 ? `<td rowspan="${crackFillers.length}">${r.label}<br><small>${r.crackLinearFeet} linear ft</small></td>` : ''}`;
-      html += `<td>${f.product}</td><td>${f.rateLabel}</td><td>${f.width}</td><td>${estimate}</td></tr>`;
-    });
+    const f = crackFillers.find(cf => cf.product === r.crackFillerType) || crackFillers[0];
+    const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
+    const estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
+    const packaging = gallons + '- 1 Gallon Jug(s)';
+    html += `<tr><td>${r.label}<br><small>${r.crackLinearFeet} linear ft</small></td>`;
+    html += `<td>${f.product}</td><td>${f.rateLabel}</td><td>${f.width}</td><td>${estimate}</td><td>${packaging}</td><td>${f.item}</td></tr>`;
   });
   $('crackBody').innerHTML = html;
 }
@@ -1116,6 +1125,7 @@ function collectAllMaterials() {
     result.mixType = entry.mixType;
     result.cushionSystem = entry.cushionSystem;
     result.crackFiller = entry.crackFiller;
+    result.crackFillerType = entry.crackFillerType;
     result.crackLinearFeet = entry.crackLinearFeet;
     return result;
   });
@@ -1163,13 +1173,12 @@ function collectAllMaterials() {
     }
   });
 
-  // Crack filler
+  // Crack filler — only the selected product
   entryResults.forEach(r => {
     if (r.crackFiller && r.crackLinearFeet > 0) {
-      crackFillers.forEach(f => {
-        const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
-        addMaterial(f.product, '', gallons, gallons + ' gallon' + (gallons !== 1 ? 's' : ''), '');
-      });
+      const f = crackFillers.find(cf => cf.product === r.crackFillerType) || crackFillers[0];
+      const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
+      addMaterial(f.product, '', gallons, gallons + '- 1 Gallon Jug(s)', f.item);
     }
   });
 
