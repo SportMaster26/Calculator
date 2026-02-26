@@ -377,12 +377,12 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
   if (def.stripingPerNCourts > 0) {
     const stripingQty = Math.ceil(entry.numCourts / def.stripingPerNCourts);
     striping.push(
-      { product: 'Stripe Rite', coats: 1, gallons: stripingQty, packaging: stripingQty, item: 'C1610G' },
-      { product: 'White Line Paint', coats: 1, gallons: stripingQty, packaging: stripingQty, item: 'C1620G' }
+      { product: 'Stripe Rite', gallons: stripingQty, packaging: stripingQty + '- 1 Gallon Jug(s)', item: 'C1610G' },
+      { product: 'White Line Paint', gallons: stripingQty, packaging: stripingQty + '- 1 Gallon Jug(s)', item: 'C1620G' }
     );
     const tapeRolls = Math.ceil(def.masktapePerCourt * entry.numCourts);
     if (tapeRolls > 0) {
-      striping.push({ product: 'Masking Tape (Standard Roll)', coats: '', gallons: '', packaging: tapeRolls + ' Rolls', item: '' });
+      striping.push({ product: 'Masking Tape (Standard Roll)', gallons: '', packaging: tapeRolls + ' Roll(s)', item: '' });
     }
   }
 
@@ -995,15 +995,15 @@ function renderResults() {
     if (r.striping.length === 0) return;
     anyStriping = true;
     const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
-    stripingHtml += `<tr class="zone-header"><td colspan="5">${courtLabel}</td></tr>`;
+    stripingHtml += `<tr class="zone-header"><td colspan="4">${courtLabel}</td></tr>`;
     for (const s of r.striping) {
-      stripingHtml += `<tr><td>${s.product}</td><td>${s.coats}</td><td>${s.gallons}</td><td>${s.packaging}</td><td>${s.item}</td></tr>`;
+      stripingHtml += `<tr><td>${s.product}</td><td>${s.gallons}</td><td>${s.packaging}</td><td>${s.item}</td></tr>`;
     }
   });
   if (anyStriping) {
     $('stripingBody').innerHTML = stripingHtml;
   } else {
-    $('stripingBody').innerHTML = '<tr><td colspan="5">N/A for this court type</td></tr>';
+    $('stripingBody').innerHTML = '<tr><td colspan="4">N/A for this court type</td></tr>';
   }
 
   // Crack filler estimates
@@ -1108,7 +1108,7 @@ function collectAllMaterials() {
   // Striping
   entryResults.forEach(r => {
     for (const s of r.striping) {
-      addMaterial(s.product, s.coats, s.gallons, s.packaging, s.item);
+      addMaterial(s.product, '', s.gallons, s.packaging, s.item);
     }
   });
 
