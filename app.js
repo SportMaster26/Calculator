@@ -677,7 +677,6 @@ function readEntryFromDOM(entry) {
   entry.mixType = el.querySelector('.entry-mix-type').value;
   entry.cushionSystem = el.querySelector('.entry-cushion').value;
   entry.crackFiller = el.querySelector('.entry-crack-filler').checked;
-  entry.crackFillerType = el.querySelector('.entry-crack-type').value;
   entry.crackLinearFeet = parseFloat(el.querySelector('.entry-crack-feet').value) || 0;
   const colorSels = el.querySelectorAll('.entry-zone-color');
   entry.zoneColors = Array.from(colorSels).map(s => s.value);
@@ -790,12 +789,6 @@ function renderCourtEntries() {
             </label>
           </div>
           <div class="form-row entry-crack-section${entry.crackFiller ? '' : ' hidden'}">
-            <label>
-              <span>Crack Filler Product</span>
-              <select class="entry-crack-type">
-                ${crackFillers.map(f => `<option value="${f.product}"${f.product === entry.crackFillerType ? ' selected' : ''}>${f.product}</option>`).join('')}
-              </select>
-            </label>
             <label>
               <span>Linear Feet of Cracks</span>
               <input class="entry-crack-feet" type="number" min="0" step="1" value="${entry.crackLinearFeet}" />
@@ -1068,15 +1061,38 @@ function renderCrackFillers(entryResults) {
   if (!anyCrack) { $('crackBody').innerHTML = ''; return; }
 
   let html = '';
-  crackEntries.forEach(r => {
-    const f = crackFillers.find(cf => cf.product === r.crackFillerType) || crackFillers[0];
-    const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
-    const estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
-    const packaging = gallons + '- 1 Gallon Jug(s)';
-    html += `<tr><td>${r.label}<br><small>${r.crackLinearFeet} linear ft</small></td>`;
-    html += `<td>${f.product}</td><td>${f.rateLabel}</td><td>${f.width}</td><td>${estimate}</td><td>${packaging}</td><td>${f.item}</td></tr>`;
+  crackEntries.forEach((r, ri) => {
+    const radioName = 'crackSelect_' + ri;
+    const selected = r.crackFillerType || crackFillers[0].product;
+    crackFillers.forEach((f, fi) => {
+      const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
+      const estimate = gallons + ' gallon' + (gallons !== 1 ? 's' : '');
+      const packaging = gallons + '- 1 Gallon Jug(s)';
+      const checked = f.product === selected ? ' checked' : '';
+      html += `<tr>`;
+      html += `<td><input type="radio" name="${radioName}" value="${f.product}" data-entry-idx="${ri}"${checked}></td>`;
+      html += fi === 0 ? `<td rowspan="${crackFillers.length}">${r.label}<br><small>${r.crackLinearFeet} linear ft</small></td>` : '';
+      html += `<td>${f.product}</td><td>${f.rateLabel}</td><td>${f.width}</td><td>${estimate}</td><td>${packaging}</td><td>${f.item}</td></tr>`;
+    });
   });
   $('crackBody').innerHTML = html;
+
+  // Wire up radio button changes
+  const crackIndexMap = {};
+  let idx = 0;
+  courtEntries.forEach(e => {
+    if (e.crackFiller && e.crackLinearFeet > 0) {
+      crackIndexMap[idx] = e;
+      idx++;
+    }
+  });
+  $('crackBody').querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const entryIdx = parseInt(radio.dataset.entryIdx, 10);
+      const entry = crackIndexMap[entryIdx];
+      if (entry) entry.crackFillerType = radio.value;
+    });
+  });
 }
 
 // ── Initialize ──
