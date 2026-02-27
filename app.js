@@ -239,6 +239,72 @@ function fmtPkg(count, packaging) {
   return count + ' - ' + getPackageLabel(packaging);
 }
 
+// Mixed packaging: drums/kegs with remainder filled by smaller containers
+// Returns { drums, kegs, pails, label }
+function calcMixedPackaging(gallons, packaging) {
+  if (!gallons || gallons <= 0) return { drums: 0, kegs: 0, pails: 0, label: '' };
+  const pkg = parseInt(packaging);
+
+  if (pkg === 55) {
+    const drums = Math.floor(gallons / 55);
+    const remainder = gallons - (drums * 55);
+    if (remainder <= 0) {
+      return { drums, kegs: 0, pails: 0, label: fmtPkg(drums, '55') };
+    } else if (remainder <= 15) {
+      // 1-15 gal remainder → pails
+      const pails = Math.ceil(remainder / 5);
+      const parts = [];
+      if (drums > 0) parts.push(fmtPkg(drums, '55'));
+      parts.push(fmtPkg(pails, '5'));
+      return { drums, kegs: 0, pails, label: parts.join(' + ') };
+    } else if (remainder <= 30) {
+      // 16-30 gal remainder → 1 keg
+      const parts = [];
+      if (drums > 0) parts.push(fmtPkg(drums, '55'));
+      parts.push(fmtPkg(1, '30'));
+      return { drums, kegs: 1, pails: 0, label: parts.join(' + ') };
+    } else {
+      // 31-55 gal remainder → another drum
+      const parts = [];
+      parts.push(fmtPkg(drums + 1, '55'));
+      return { drums: drums + 1, kegs: 0, pails: 0, label: parts.join(' + ') };
+    }
+  }
+
+  if (pkg === 30) {
+    const kegs = Math.floor(gallons / 30);
+    const remainder = gallons - (kegs * 30);
+    if (remainder <= 0) {
+      return { drums: 0, kegs, pails: 0, label: fmtPkg(kegs, '30') };
+    } else if (remainder <= 15) {
+      // 1-15 gal remainder → pails
+      const pails = Math.ceil(remainder / 5);
+      const parts = [];
+      if (kegs > 0) parts.push(fmtPkg(kegs, '30'));
+      parts.push(fmtPkg(pails, '5'));
+      return { drums: 0, kegs, pails, label: parts.join(' + ') };
+    } else {
+      // 16-30 gal remainder → another keg
+      const parts = [];
+      parts.push(fmtPkg(kegs + 1, '30'));
+      return { drums: 0, kegs: kegs + 1, pails: 0, label: parts.join(' + ') };
+    }
+  }
+
+  // Pails — no mixed packaging
+  const pails = Math.ceil(gallons / 5);
+  return { drums: 0, kegs: 0, pails, label: fmtPkg(pails, '5') };
+}
+
+// Sand calculation that accounts for mixed packaging
+function calcMixedSandLbs(mixed, sandFn) {
+  let lbs = 0;
+  if (mixed.drums > 0) lbs += sandFn(mixed.drums, '55');
+  if (mixed.kegs > 0)  lbs += sandFn(mixed.kegs, '30');
+  if (mixed.pails > 0) lbs += sandFn(mixed.pails, '5');
+  return lbs;
+}
+
 function calcGallons(coverageRate, areaSqYd, coats) {
   if (!coverageRate || !areaSqYd || !coats) return 0;
   return Math.ceil(coverageRate * areaSqYd * coats);
@@ -403,6 +469,18 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           packaging: '',
           item: getItemNumber(prodName, packaging, mixType)
         });
+        // ColorPlus per zone — based on split logic
+        if (colorName !== 'Not Selected') {
+          const cpCount = getColorPlusForZone(gallons, packaging, prodName);
+          const cpUnit = getColorPlusUnit(packaging, prodName);
+          const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
+          if (cpCount > 0) {
+            zoneResult.products.push({
+              product: colorName, coats: '', gallons: '',
+              packaging: cpCount + ' - ' + cpUnit, item: cpItem
+            });
+          }
+        }
       }
     }
     zones.push(zoneResult);
@@ -412,33 +490,16 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
   const zoneTotalPackaging = [];
   if (!showPerZone) {
     for (const [prodName, totalGal] of Object.entries(productTotalGallons)) {
-      const totalPkgs = productTotalPkgs[prodName];
+      const mixed = calcMixedPackaging(totalGal, packaging);
       zoneTotalPackaging.push({
         product: prodName,
         gallons: totalGal,
-        packaging: fmtPkg(totalPkgs, packaging),
+        packaging: mixed.label,
         item: getItemNumber(prodName, packaging, mixType)
       });
-      // ColorPlus per zone — based on split logic (how many splits each zone fills)
-      for (const { zone, colorName, rawProducts } of zoneRawData) {
-        if (colorName === 'Not Selected') continue;
-        for (const { prodName: pn, gallons } of rawProducts) {
-          if (pn !== prodName) continue;
-          const cpCount = getColorPlusForZone(gallons, packaging, pn);
-          const cpUnit = getColorPlusUnit(packaging, pn);
-          const cpItem = getColorPlusItemNumber(colorName, packaging, pn);
-          if (cpCount > 0) {
-            zoneTotalPackaging.push({
-              product: colorName + ' (' + zone.name + ')',
-              coats: '', gallons: '',
-              packaging: cpCount + ' - ' + cpUnit, item: cpItem
-            });
-          }
-        }
-      }
-      // Sand for concentrate — aggregated at total level
+      // Sand for concentrate — based on mixed packaging
       if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
-        const sandLbs = getColorSandLbs(totalPkgs, packaging);
+        const sandLbs = calcMixedSandLbs(mixed, getColorSandLbs);
         const sandBags = Math.ceil(sandLbs / 50);
         zoneTotalPackaging.push({
           product: 'Color Sand (80-90 Mesh)',
@@ -502,10 +563,10 @@ function calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixT
     const rate = getCoverageRate(name, surfaceType, 'ready');
     const coats = surfaceType === 'asphalt' ? 2 : 1;
     const gallons = calcGallons(rate, totalSqYd, coats);
-    const packages = calcPackages(gallons, pkgSize);
+    const mixed = calcMixedPackaging(gallons, packaging);
     totalArea.push({
       product: name, coats, gallons,
-      packaging: fmtPkg(packages, packaging),
+      packaging: mixed.label,
       item: getItemNumber(name, packaging, 'ready')
     });
   } else {
@@ -513,13 +574,13 @@ function calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixT
     const rate = getCoverageRate(name, surfaceType, 'concentrate');
     const coats = surfaceType === 'asphalt' ? 2 : 1;
     const gallons = calcGallons(rate, totalSqYd, coats);
-    const packages = calcPackages(gallons, pkgSize);
+    const mixed = calcMixedPackaging(gallons, packaging);
     totalArea.push({
       product: name, coats, gallons,
-      packaging: fmtPkg(packages, packaging),
+      packaging: mixed.label,
       item: getItemNumber(name, packaging, 'concentrate')
     });
-    const sandLbs = getResurfacerSandLbs(packages, packaging);
+    const sandLbs = calcMixedSandLbs(mixed, getResurfacerSandLbs);
     const sandBags = Math.ceil(sandLbs / 50);
     totalArea.push({
       product: 'Resurfacer Sand (50-60 Mesh)', coats: '', gallons: sandLbs + ' lbs',
@@ -544,10 +605,10 @@ function calculateGlobalProducts(totalCombinedSqFt, surfaceType, packaging, mixT
     for (const item of sys.items) {
       const rate = getCoverageRate(item.product, surfaceType, mixType);
       const gallons = calcGallons(rate, totalSqYd, item.coats);
-      const packages = calcPackages(gallons, pkgSize);
+      const mixed = calcMixedPackaging(gallons, packaging);
       sysResult.items.push({
         product: item.product, coats: item.coats, gallons,
-        packaging: fmtPkg(packages, packaging),
+        packaging: mixed.label,
         item: getItemNumber(item.product, packaging, mixType)
       });
     }
