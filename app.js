@@ -866,19 +866,19 @@ function renderCourtEntries() {
               <input class="entry-num-courts input-highlight" type="number" min="1" step="1" value="${entry.numCourts}" />
             </label>
             <label>
-              <span>Packaging</span>
-              <select class="entry-packaging"${entry.mixType === 'ready' ? ' disabled' : ''}>
-                <option value="55"${entry.packaging === '55' ? ' selected' : ''}>55 Gallon Drums</option>
-                <option value="30"${entry.packaging === '30' ? ' selected' : ''}>30 Gallon Kegs</option>
-                <option value="5"${entry.packaging === '5' ? ' selected' : ''}>5 Gallon Pails</option>
-              </select>
-            </label>
-            <label>
               <span>Mix Type</span>
               <select class="entry-mix-type">
                 <option value="ready"${entry.mixType === 'ready' ? ' selected' : ''}>Ready-to-Use</option>
                 <option value="concWithSand"${entry.mixType === 'concWithSand' ? ' selected' : ''}>Concentrate w/ Sand</option>
                 <option value="concentrate"${entry.mixType === 'concentrate' ? ' selected' : ''}>Concentrate</option>
+              </select>
+            </label>
+            <label>
+              <span>Packaging</span>
+              <select class="entry-packaging"${entry.mixType === 'ready' ? ' disabled' : ''}>
+                <option value="55"${entry.packaging === '55' ? ' selected' : ''}>55 Gallon Drums</option>
+                <option value="30"${entry.packaging === '30' ? ' selected' : ''}>30 Gallon Kegs</option>
+                <option value="5"${entry.packaging === '5' ? ' selected' : ''}>5 Gallon Pails</option>
               </select>
             </label>
             <label>
