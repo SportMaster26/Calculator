@@ -325,50 +325,52 @@ function getColorSandLbs(packages, packaging) {
   return packages * mult;
 }
 
-// ColorPlus quantity based on zone gallons and packaging split logic
-// 5-gal pails:  2 jars per pail  (Ready Mix / RTU: 1 jar per pail)
-// 30-gal kegs:  split into 2 × 15 gal — 1 gallon ColorPlus per split
-// 55-gal drums: split into 2 × 27.5 gal — 2 gallons ColorPlus per split
+// ColorPlus for mixed packaging — returns array of { count, unit, isJar }
+// Drums: each drum → 4 gal color, remainder keg → 2 gal color, remainder pails → 1 jar
+// Kegs: each keg → 2 gal color, remainder pails → 1 jar
+// Pails: 2 jars per pail (Ready Mix / RTU: 1 jar per pail)
 function getColorPlusForZone(zoneGallons, packaging, productName) {
-  if (!zoneGallons || zoneGallons <= 0) return 0;
+  if (!zoneGallons || zoneGallons <= 0) return [];
   const pkg = parseInt(packaging);
+
   if (productName === 'Ready Mix' || productName === 'PickleMaster RTU') {
-    // Pails only: 1 jar per pail
-    return Math.ceil(zoneGallons / 5);
-  }
-  if (pkg === 5) {
-    // 2 jars per 5-gal pail
     const pails = Math.ceil(zoneGallons / 5);
-    return pails * 2;
+    return [{ count: pails, unit: '24 OZ Jar(s)', isJar: true }];
   }
-  if (pkg === 30) {
-    // 1 gallon ColorPlus per 15-gal split
-    const splits = Math.ceil(zoneGallons / 15);
-    return splits;
+
+  if (pkg === 5) {
+    const pails = Math.ceil(zoneGallons / 5);
+    return [{ count: pails * 2, unit: '24 OZ Jar(s)', isJar: true }];
   }
+
+  const mixed = calcMixedPackaging(zoneGallons, packaging);
+  const entries = [];
+
   if (pkg === 55) {
-    // 2 gallons ColorPlus per 27.5-gal split
-    const splits = Math.ceil(zoneGallons / 27.5);
-    return splits * 2;
+    const gallonColor = mixed.drums * 4 + mixed.kegs * 2;
+    if (gallonColor > 0) {
+      entries.push({ count: gallonColor, unit: '1 Gallon Pail(s)', isJar: false });
+    }
+    if (mixed.pails > 0) {
+      entries.push({ count: 1, unit: '24 OZ Jar(s)', isJar: true });
+    }
+  } else if (pkg === 30) {
+    const gallonColor = mixed.kegs * 2;
+    if (gallonColor > 0) {
+      entries.push({ count: gallonColor, unit: '1 Gallon Pail(s)', isJar: false });
+    }
+    if (mixed.pails > 0) {
+      entries.push({ count: 1, unit: '24 OZ Jar(s)', isJar: true });
+    }
   }
-  return 0;
+
+  return entries;
 }
 
-function getColorPlusUnit(packaging, productName) {
-  if (parseInt(packaging) === 5 && (productName === 'Ready Mix' || productName === 'PickleMaster RTU')) {
-    return '24 OZ Jar(s)';
-  }
-  if (parseInt(packaging) === 5) {
-    return '24 OZ Jar(s)';
-  }
-  return '1 Gallon Pail(s)';
-}
-
-function getColorPlusItemNumber(colorName, packaging, productName) {
+function getColorPlusItemNumber(colorName, isJar) {
   const color = colorOptions.find(c => c.name === colorName);
   if (!color || !color.itemG) return '';
-  const usesJars = parseInt(packaging) === 5;
-  return usesJars ? color.itemJ : color.itemG;
+  return isJar ? color.itemJ : color.itemG;
 }
 
 // ── Compute zone areas ──
@@ -452,13 +454,12 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           item: getItemNumber(prodName, packaging, mixType)
         });
         if (colorName !== 'Not Selected') {
-          const cpCount = getColorPlusForZone(gallons, packaging, prodName);
-          const cpUnit = getColorPlusUnit(packaging, prodName);
-          const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
-          if (cpCount > 0) {
+          const cpEntries = getColorPlusForZone(gallons, packaging, prodName);
+          for (const cp of cpEntries) {
+            const cpItem = getColorPlusItemNumber(colorName, cp.isJar);
             zoneResult.products.push({
               product: colorName, coats: '', gallons: '',
-              packaging: cpCount + ' - ' + cpUnit, item: cpItem
+              packaging: cp.count + ' - ' + cp.unit, item: cpItem
             });
           }
         }
@@ -469,15 +470,14 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           packaging: '',
           item: getItemNumber(prodName, packaging, mixType)
         });
-        // ColorPlus per zone — based on split logic
+        // ColorPlus per zone — based on mixed packaging logic
         if (colorName !== 'Not Selected') {
-          const cpCount = getColorPlusForZone(gallons, packaging, prodName);
-          const cpUnit = getColorPlusUnit(packaging, prodName);
-          const cpItem = getColorPlusItemNumber(colorName, packaging, prodName);
-          if (cpCount > 0) {
+          const cpEntries = getColorPlusForZone(gallons, packaging, prodName);
+          for (const cp of cpEntries) {
+            const cpItem = getColorPlusItemNumber(colorName, cp.isJar);
             zoneResult.products.push({
               product: colorName, coats: '', gallons: '',
-              packaging: cpCount + ' - ' + cpUnit, item: cpItem
+              packaging: cp.count + ' - ' + cp.unit, item: cpItem
             });
           }
         }
