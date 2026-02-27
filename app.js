@@ -431,75 +431,71 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     zoneRawData.push({ zone, zi, colorName, rawProducts });
   });
 
-  // ── Compute total packages per product from aggregated gallons ──
-  const productTotalPkgs = {};
-  for (const prodName of Object.keys(productTotalGallons)) {
-    productTotalPkgs[prodName] = calcPackages(productTotalGallons[prodName], pkgSize);
-  }
-
-  const showPerZone = packaging === '5'; // pails: show per-zone; kegs/drums: show totals
-
-  // ── Second pass: build zone results ──
+  // ── Second pass: build zone results (always per-zone packaging) ──
   const zones = [];
+  // Track per-zone container counts for the total row
+  const productTotalContainers = {}; // prodName → { drums, kegs, pails }
+  const productTotalSandLbs = {};    // prodName → lbs (for concentrate sand)
+
   zoneRawData.forEach(({ zone, zi, colorName, rawProducts }) => {
     const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
 
     for (const { prodName, coats, gallons } of rawProducts) {
-      if (showPerZone) {
-        // Pails: show packaging + ColorPlus per zone with each zone's own color
-        const zonePackages = calcPackages(gallons, pkgSize);
-        zoneResult.products.push({
-          product: prodName, coats, gallons,
-          packaging: fmtPkg(zonePackages, packaging),
-          item: getItemNumber(prodName, packaging, mixType)
-        });
-        if (colorName !== 'Not Selected') {
-          const cpEntries = getColorPlusForZone(gallons, packaging, prodName);
-          for (const cp of cpEntries) {
-            const cpItem = getColorPlusItemNumber(colorName, cp.isJar);
-            zoneResult.products.push({
-              product: colorName, coats: '', gallons: '',
-              packaging: cp.count + ' - ' + cp.unit, item: cpItem
-            });
-          }
-        }
-      } else {
-        // Kegs/Drums: show gallons per zone, packaging in total row
-        zoneResult.products.push({
-          product: prodName, coats, gallons,
-          packaging: '',
-          item: getItemNumber(prodName, packaging, mixType)
-        });
-        // ColorPlus per zone — based on mixed packaging logic
-        if (colorName !== 'Not Selected') {
-          const cpEntries = getColorPlusForZone(gallons, packaging, prodName);
-          for (const cp of cpEntries) {
-            const cpItem = getColorPlusItemNumber(colorName, cp.isJar);
-            zoneResult.products.push({
-              product: colorName, coats: '', gallons: '',
-              packaging: cp.count + ' - ' + cp.unit, item: cpItem
-            });
-          }
+      // Calculate mixed packaging for this zone's gallons
+      const mixed = calcMixedPackaging(gallons, packaging);
+      zoneResult.products.push({
+        product: prodName, coats, gallons,
+        packaging: mixed.label,
+        item: getItemNumber(prodName, packaging, mixType)
+      });
+
+      // Accumulate containers for the total row
+      if (!productTotalContainers[prodName]) {
+        productTotalContainers[prodName] = { drums: 0, kegs: 0, pails: 0 };
+      }
+      productTotalContainers[prodName].drums += mixed.drums;
+      productTotalContainers[prodName].kegs += mixed.kegs;
+      productTotalContainers[prodName].pails += mixed.pails;
+
+      // Sand for concentrate — per zone
+      if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
+        const sandLbs = calcMixedSandLbs(mixed, getColorSandLbs);
+        productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
+      }
+
+      // ColorPlus per zone — based on this zone's mixed packaging
+      if (colorName !== 'Not Selected') {
+        const cpEntries = getColorPlusForZone(gallons, packaging, prodName);
+        for (const cp of cpEntries) {
+          const cpItem = getColorPlusItemNumber(colorName, cp.isJar);
+          zoneResult.products.push({
+            product: colorName, coats: '', gallons: '',
+            packaging: cp.count + ' - ' + cp.unit, item: cpItem
+          });
         }
       }
     }
     zones.push(zoneResult);
   });
 
-  // ── Build total packaging summary (only for kegs/drums) ──
+  // ── Build total packaging summary (aggregate of per-zone containers) ──
   const zoneTotalPackaging = [];
-  if (!showPerZone) {
-    for (const [prodName, totalGal] of Object.entries(productTotalGallons)) {
-      const mixed = calcMixedPackaging(totalGal, packaging);
+  const pkg = parseInt(packaging);
+  if (pkg === 55 || pkg === 30) {
+    for (const [prodName, totals] of Object.entries(productTotalContainers)) {
+      const parts = [];
+      if (totals.drums > 0) parts.push(fmtPkg(totals.drums, '55'));
+      if (totals.kegs > 0) parts.push(fmtPkg(totals.kegs, '30'));
+      if (totals.pails > 0) parts.push(fmtPkg(totals.pails, '5'));
       zoneTotalPackaging.push({
         product: prodName,
-        gallons: totalGal,
-        packaging: mixed.label,
+        gallons: productTotalGallons[prodName],
+        packaging: parts.join(' + '),
         item: getItemNumber(prodName, packaging, mixType)
       });
-      // Sand for concentrate — based on mixed packaging
-      if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
-        const sandLbs = calcMixedSandLbs(mixed, getColorSandLbs);
+      // Sand for concentrate
+      if (productTotalSandLbs[prodName]) {
+        const sandLbs = productTotalSandLbs[prodName];
         const sandBags = Math.ceil(sandLbs / 50);
         zoneTotalPackaging.push({
           product: 'Color Sand (80-90 Mesh)',
@@ -1270,18 +1266,20 @@ function collectAllMaterials() {
     }
   });
 
-  // Zone products — use aggregated total packaging for base products, per-zone for ColorPlus
+  // Zone products — per-zone ColorPlus, aggregated totals for base products
   entryResults.forEach(r => {
-    // Add per-zone ColorPlus (non-base products with packaging)
+    const hasAggregatedTotals = r.zoneTotalPackaging && r.zoneTotalPackaging.length > 0;
     for (const zone of r.zones) {
       for (const p of zone.products) {
-        if (p.packaging) {
-          addMaterial(p.product, p.coats, p.gallons, p.packaging, p.item);
-        }
+        if (!p.packaging) continue;
+        // For drums/kegs: skip base products (covered by zoneTotalPackaging)
+        // ColorPlus rows have coats === '' and gallons === ''
+        if (hasAggregatedTotals && p.coats !== '') continue;
+        addMaterial(p.product, p.coats, p.gallons, p.packaging, p.item);
       }
     }
-    // Add aggregated base product totals
-    if (r.zoneTotalPackaging) {
+    // Add aggregated base product totals (drums/kegs)
+    if (hasAggregatedTotals) {
       for (const t of r.zoneTotalPackaging) {
         addMaterial(t.product, '', t.gallons, t.packaging, t.item);
       }
