@@ -14,7 +14,7 @@ const coverageReady = {
   'Acrylic Resurfacer w/ Sand':      [0.11, 0.13, 0.11, 0.11],
   'CushionMaster I (Fine Rubber)':   [0.10, 0.10, 0.10, 0.10],
   'CushionMaster II (Coarse Rubber)':[0.15, 0.15, 0.15, 0.15],
-  'Neutral Concentrate w/ Sand':     [0.07, 0.09, 0.07, 0.07],
+  'Neutral Ready Mix':               [0.07, 0.09, 0.07, 0.07],
   'PickleMaster':                    [0.07, 0.09, 0.07, 0.07],
   'Ready Mix':                        [0.09, 0.11, 0.09, 0.09],
   'PickleMaster RTU':                [0.09, 0.11, 0.09, 0.09]
@@ -37,7 +37,7 @@ const itemNumbersReady = {
   'Acrylic Resurfacer w/ Sand': 'C1330',
   'CushionMaster I (Fine Rubber)': 'C1450',
   'CushionMaster II (Coarse Rubber)': 'C1460',
-  'Neutral Concentrate w/ Sand': 'C1365',
+  'Neutral Ready Mix': 'C1285',
   'PickleMaster': 'C1298',
   'Ready Mix': 'C1285P',
   'PickleMaster RTU': 'C1299P'
@@ -186,7 +186,7 @@ function getZoneProductsConcWithSand(courtType, zoneName) {
     ];
   }
   return [
-    ['Neutral Concentrate w/ Sand', 2]
+    ['Neutral Ready Mix', 2]
   ];
 }
 
