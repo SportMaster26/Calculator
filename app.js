@@ -15,6 +15,7 @@ const coverageReady = {
   'CushionMaster I (Fine Rubber)':   [0.10, 0.10, 0.10, 0.10],
   'CushionMaster II (Coarse Rubber)':[0.15, 0.15, 0.15, 0.15],
   'Neutral Ready Mix':               [0.07, 0.09, 0.07, 0.07],
+  'Neutral Concentrate w/ Sand':     [0.07, 0.09, 0.07, 0.07],
   'PickleMaster':                    [0.07, 0.09, 0.07, 0.07],
   'Ready Mix':                        [0.09, 0.11, 0.09, 0.09],
   'PickleMaster RTU':                [0.09, 0.11, 0.09, 0.09]
@@ -38,6 +39,7 @@ const itemNumbersReady = {
   'CushionMaster I (Fine Rubber)': 'C1450',
   'CushionMaster II (Coarse Rubber)': 'C1460',
   'Neutral Ready Mix': 'C1285',
+  'Neutral Concentrate w/ Sand': 'C1365',
   'PickleMaster': 'C1298',
   'Ready Mix': 'C1285P',
   'PickleMaster RTU': 'C1299P'
@@ -179,14 +181,16 @@ function getZoneProductsRTU(courtType, zoneName) {
 }
 
 // ── Products per zone per court type (Concentrate w/ Sand) ──
-function getZoneProductsConcWithSand(courtType, zoneName) {
+// Pails → Neutral Ready Mix (C1285P), Kegs/Drums → Neutral Concentrate w/ Sand (C1365K/D)
+function getZoneProductsConcWithSand(courtType, zoneName, packaging) {
   if (courtType === 'pickleball') {
     return [
       ['PickleMaster', 2]
     ];
   }
+  const prodName = (parseInt(packaging) === 5) ? 'Neutral Ready Mix' : 'Neutral Concentrate w/ Sand';
   return [
-    ['Neutral Ready Mix', 2]
+    [prodName, 2]
   ];
 }
 
@@ -222,6 +226,11 @@ function getItemNumber(productName, packaging, mixType) {
   if (base.endsWith('P')) return base;
   const suffix = { 5: 'P', 30: 'K', 55: 'D' }[packaging] || '';
   return base + suffix;
+}
+
+function displayName(prodName) {
+  if (prodName === 'Ready Mix') return 'Neutral Ready Mix';
+  return prodName;
 }
 
 function getPackageSize(packaging) {
@@ -413,7 +422,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     const prods = mixType === 'ready'
       ? getZoneProductsRTU(entry.courtType, zone.name)
       : mixType === 'concWithSand'
-        ? getZoneProductsConcWithSand(entry.courtType, zone.name)
+        ? getZoneProductsConcWithSand(entry.courtType, zone.name, packaging)
         : getZoneProductsConc(entry.courtType, zone.name);
 
     const rawProducts = [];
@@ -441,7 +450,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     for (const { prodName, coats, gallons } of rawProducts) {
       // Calculate mixed packaging for this zone's gallons
       const mixed = calcMixedPackaging(gallons, packaging);
-      const isConcentrate = (prodName === 'Neutral Concentrate');
+      const isConcentrate = (prodName === 'Neutral Concentrate' || prodName === 'Neutral Concentrate w/ Sand');
       const hasPailRemainder = isConcentrate && mixed.pails > 0 && (mixed.drums > 0 || mixed.kegs > 0);
 
       if (hasPailRemainder) {
@@ -450,13 +459,14 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         if (mixed.drums > 0) concParts.push(fmtPkg(mixed.drums, '55'));
         if (mixed.kegs > 0) concParts.push(fmtPkg(mixed.kegs, '30'));
         zoneResult.products.push({
-          product: prodName, coats, gallons,
+          product: displayName(prodName), coats, gallons,
           packaging: concParts.join(' + '),
           item: getItemNumber(prodName, packaging, mixType)
         });
-        // Pail remainder as Neutral Ready Mix
+        // Pail remainder as Neutral Ready Mix with material overage gallons
+        const pailGallons = mixed.pails * 5;
         zoneResult.products.push({
-          product: 'Neutral Ready Mix', coats: '', gallons: '',
+          product: 'Neutral Ready Mix', coats: '', gallons: pailGallons,
           packaging: fmtPkg(mixed.pails, '5'),
           item: 'C1285P'
         });
@@ -472,10 +482,12 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         }
         productTotalContainers['Neutral Ready Mix'].pails += mixed.pails;
 
-        // Sand for concentrate — only on drums/kegs (no sand for Ready Mix pails)
-        const concOnly = { drums: mixed.drums, kegs: mixed.kegs, pails: 0 };
-        const sandLbs = calcMixedSandLbs(concOnly, getColorSandLbs);
-        productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
+        // Sand for concentrate — only on drums/kegs, only for plain Neutral Concentrate
+        if (prodName === 'Neutral Concentrate') {
+          const concOnly = { drums: mixed.drums, kegs: mixed.kegs, pails: 0 };
+          const sandLbs = calcMixedSandLbs(concOnly, getColorSandLbs);
+          productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
+        }
 
         // ColorPlus: gallon color for drums/kegs, 1 jar per pail for Ready Mix
         if (colorName !== 'Not Selected') {
@@ -501,7 +513,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       } else {
         // Normal path: single product line
         zoneResult.products.push({
-          product: prodName, coats, gallons,
+          product: displayName(prodName), coats, gallons,
           packaging: mixed.label,
           item: getItemNumber(prodName, packaging, mixType)
         });
@@ -514,8 +526,8 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         productTotalContainers[prodName].kegs += mixed.kegs;
         productTotalContainers[prodName].pails += mixed.pails;
 
-        // Sand for concentrate — per zone
-        if (isConcentrate) {
+        // Sand for concentrate — per zone (only plain Neutral Concentrate)
+        if (prodName === 'Neutral Concentrate') {
           const sandLbs = calcMixedSandLbs(mixed, getColorSandLbs);
           productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
         }
@@ -557,7 +569,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       if (totals.pails > 0) parts.push(fmtPkg(totals.pails, '5'));
       const itemNum = (prodName === 'Neutral Ready Mix') ? 'C1285P' : getItemNumber(prodName, packaging, mixType);
       zoneTotalPackaging.push({
-        product: prodName,
+        product: displayName(prodName),
         gallons: '',
         packaging: parts.join(' + '),
         item: itemNum
