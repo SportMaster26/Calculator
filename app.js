@@ -458,9 +458,10 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           packaging: concParts.join(' + '),
           item: getItemNumber(prodName, packaging, mixType)
         });
-        // Pail remainder as Neutral Ready Mix
+        // Pail remainder as Neutral Ready Mix with material overage gallons
+        const pailGallons = mixed.pails * 5;
         zoneResult.products.push({
-          product: 'Neutral Ready Mix', coats: '', gallons: '',
+          product: 'Neutral Ready Mix', coats: '', gallons: pailGallons,
           packaging: fmtPkg(mixed.pails, '5'),
           item: 'C1285P'
         });
