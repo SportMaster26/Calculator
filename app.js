@@ -441,45 +441,104 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     for (const { prodName, coats, gallons } of rawProducts) {
       // Calculate mixed packaging for this zone's gallons
       const mixed = calcMixedPackaging(gallons, packaging);
-      zoneResult.products.push({
-        product: prodName, coats, gallons,
-        packaging: mixed.label,
-        item: getItemNumber(prodName, packaging, mixType)
-      });
+      const isConcentrate = (prodName === 'Neutral Concentrate');
+      const hasPailRemainder = isConcentrate && mixed.pails > 0 && (mixed.drums > 0 || mixed.kegs > 0);
 
-      // Accumulate containers for the total row
-      if (!productTotalContainers[prodName]) {
-        productTotalContainers[prodName] = { drums: 0, kegs: 0, pails: 0 };
-      }
-      productTotalContainers[prodName].drums += mixed.drums;
-      productTotalContainers[prodName].kegs += mixed.kegs;
-      productTotalContainers[prodName].pails += mixed.pails;
+      if (hasPailRemainder) {
+        // Neutral Concentrate: drums/kegs stay as concentrate, pails become Neutral Ready Mix
+        const concParts = [];
+        if (mixed.drums > 0) concParts.push(fmtPkg(mixed.drums, '55'));
+        if (mixed.kegs > 0) concParts.push(fmtPkg(mixed.kegs, '30'));
+        zoneResult.products.push({
+          product: prodName, coats, gallons,
+          packaging: concParts.join(' + '),
+          item: getItemNumber(prodName, packaging, mixType)
+        });
+        // Pail remainder as Neutral Ready Mix
+        zoneResult.products.push({
+          product: 'Neutral Ready Mix', coats: '', gallons: '',
+          packaging: fmtPkg(mixed.pails, '5'),
+          item: 'C1285P'
+        });
 
-      // Sand for concentrate — per zone
-      if (mixType === 'concentrate' && prodName === 'Neutral Concentrate') {
-        const sandLbs = calcMixedSandLbs(mixed, getColorSandLbs);
+        // Accumulate containers: concentrate gets drums/kegs, Ready Mix gets pails
+        if (!productTotalContainers[prodName]) {
+          productTotalContainers[prodName] = { drums: 0, kegs: 0, pails: 0 };
+        }
+        productTotalContainers[prodName].drums += mixed.drums;
+        productTotalContainers[prodName].kegs += mixed.kegs;
+        if (!productTotalContainers['Neutral Ready Mix']) {
+          productTotalContainers['Neutral Ready Mix'] = { drums: 0, kegs: 0, pails: 0 };
+        }
+        productTotalContainers['Neutral Ready Mix'].pails += mixed.pails;
+
+        // Sand for concentrate — only on drums/kegs (no sand for Ready Mix pails)
+        const concOnly = { drums: mixed.drums, kegs: mixed.kegs, pails: 0 };
+        const sandLbs = calcMixedSandLbs(concOnly, getColorSandLbs);
         productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
-      }
 
-      // ColorPlus per zone — based on this zone's mixed packaging
-      if (colorName !== 'Not Selected') {
-        const cpEntries = getColorPlusForZone(gallons, packaging, prodName);
-        if (cpEntries.length > 0) {
-          const pkgLabel = cpEntries.map(cp => cp.count + ' - ' + cp.unit).join(' + ');
-          const cpItem = getColorPlusItemNumber(colorName, cpEntries[0].isJar);
+        // ColorPlus: gallon color for drums/kegs, 1 jar per pail for Ready Mix
+        if (colorName !== 'Not Selected') {
+          const cpParts = [];
+          const gallonColor = mixed.drums * 4 + mixed.kegs * 2;
+          if (gallonColor > 0) cpParts.push(gallonColor + ' - 1 Gallon Pail(s)');
+          cpParts.push(mixed.pails + ' - 24 OZ Jar(s)');
+          const cpItem = gallonColor > 0
+            ? getColorPlusItemNumber(colorName, false)
+            : getColorPlusItemNumber(colorName, true);
           zoneResult.products.push({
             product: colorName, coats: '', gallons: '',
-            packaging: pkgLabel, item: cpItem
+            packaging: cpParts.join(' + '), item: cpItem
           });
-          // Accumulate color totals
           if (!colorTotals[colorName]) {
             colorTotals[colorName] = { gallons: 0, jars: 0,
               itemG: getColorPlusItemNumber(colorName, false),
               itemJ: getColorPlusItemNumber(colorName, true) };
           }
-          for (const cp of cpEntries) {
-            if (cp.isJar) colorTotals[colorName].jars += cp.count;
-            else colorTotals[colorName].gallons += cp.count;
+          if (gallonColor > 0) colorTotals[colorName].gallons += gallonColor;
+          colorTotals[colorName].jars += mixed.pails;
+        }
+      } else {
+        // Normal path: single product line
+        zoneResult.products.push({
+          product: prodName, coats, gallons,
+          packaging: mixed.label,
+          item: getItemNumber(prodName, packaging, mixType)
+        });
+
+        // Accumulate containers for the total row
+        if (!productTotalContainers[prodName]) {
+          productTotalContainers[prodName] = { drums: 0, kegs: 0, pails: 0 };
+        }
+        productTotalContainers[prodName].drums += mixed.drums;
+        productTotalContainers[prodName].kegs += mixed.kegs;
+        productTotalContainers[prodName].pails += mixed.pails;
+
+        // Sand for concentrate — per zone
+        if (isConcentrate) {
+          const sandLbs = calcMixedSandLbs(mixed, getColorSandLbs);
+          productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
+        }
+
+        // ColorPlus per zone — based on this zone's mixed packaging
+        if (colorName !== 'Not Selected') {
+          const cpEntries = getColorPlusForZone(gallons, packaging, prodName);
+          if (cpEntries.length > 0) {
+            const pkgLabel = cpEntries.map(cp => cp.count + ' - ' + cp.unit).join(' + ');
+            const cpItem = getColorPlusItemNumber(colorName, cpEntries[0].isJar);
+            zoneResult.products.push({
+              product: colorName, coats: '', gallons: '',
+              packaging: pkgLabel, item: cpItem
+            });
+            if (!colorTotals[colorName]) {
+              colorTotals[colorName] = { gallons: 0, jars: 0,
+                itemG: getColorPlusItemNumber(colorName, false),
+                itemJ: getColorPlusItemNumber(colorName, true) };
+            }
+            for (const cp of cpEntries) {
+              if (cp.isJar) colorTotals[colorName].jars += cp.count;
+              else colorTotals[colorName].gallons += cp.count;
+            }
           }
         }
       }
@@ -496,11 +555,12 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       if (totals.drums > 0) parts.push(fmtPkg(totals.drums, '55'));
       if (totals.kegs > 0) parts.push(fmtPkg(totals.kegs, '30'));
       if (totals.pails > 0) parts.push(fmtPkg(totals.pails, '5'));
+      const itemNum = (prodName === 'Neutral Ready Mix') ? 'C1285P' : getItemNumber(prodName, packaging, mixType);
       zoneTotalPackaging.push({
         product: prodName,
         gallons: '',
         packaging: parts.join(' + '),
-        item: getItemNumber(prodName, packaging, mixType)
+        item: itemNum
       });
       // Sand for concentrate
       if (productTotalSandLbs[prodName]) {
@@ -1288,14 +1348,14 @@ function collectAllMaterials() {
   });
 
   // Zone products — per-zone ColorPlus, aggregated totals for base products
+  const colorNames = new Set(colorOptions.map(c => c.name));
   entryResults.forEach(r => {
     const hasAggregatedTotals = r.zoneTotalPackaging && r.zoneTotalPackaging.length > 0;
     for (const zone of r.zones) {
       for (const p of zone.products) {
         if (!p.packaging) continue;
-        // For drums/kegs: skip base products (covered by zoneTotalPackaging)
-        // ColorPlus rows have coats === '' and gallons === ''
-        if (hasAggregatedTotals && p.coats !== '') continue;
+        // For drums/kegs: only add ColorPlus from zones (base products covered by zoneTotalPackaging)
+        if (hasAggregatedTotals && !colorNames.has(p.product)) continue;
         addMaterial(p.product, p.coats, p.gallons, p.packaging, p.item);
       }
     }
