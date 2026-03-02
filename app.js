@@ -328,19 +328,14 @@ function getColorSandLbs(packages, packaging) {
 // ColorPlus for mixed packaging — returns array of { count, unit, isJar }
 // Drums: each drum → 4 gal color, remainder keg → 2 gal color, remainder pails → 1 jar
 // Kegs: each keg → 2 gal color, remainder pails → 1 jar
-// Pails: 2 jars per pail (Ready Mix / RTU: 1 jar per pail)
+// Pails: 1 jar per pail
 function getColorPlusForZone(zoneGallons, packaging, productName) {
   if (!zoneGallons || zoneGallons <= 0) return [];
   const pkg = parseInt(packaging);
 
-  if (productName === 'Ready Mix' || productName === 'PickleMaster RTU') {
+  if (pkg === 5 || productName === 'Ready Mix' || productName === 'PickleMaster RTU') {
     const pails = Math.ceil(zoneGallons / 5);
     return [{ count: pails, unit: '24 OZ Jar(s)', isJar: true }];
-  }
-
-  if (pkg === 5) {
-    const pails = Math.ceil(zoneGallons / 5);
-    return [{ count: pails * 2, unit: '24 OZ Jar(s)', isJar: true }];
   }
 
   const mixed = calcMixedPackaging(zoneGallons, packaging);
@@ -489,7 +484,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       if (totals.pails > 0) parts.push(fmtPkg(totals.pails, '5'));
       zoneTotalPackaging.push({
         product: prodName,
-        gallons: productTotalGallons[prodName],
+        gallons: '',
         packaging: parts.join(' + '),
         item: getItemNumber(prodName, packaging, mixType)
       });
