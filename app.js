@@ -326,16 +326,17 @@ function getColorSandLbs(packages, packaging) {
 }
 
 // ColorPlus for mixed packaging — returns array of { count, unit, isJar }
-// Drums: each drum → 4 gal color, remainder keg → 2 gal color, remainder pails → 1 jar
-// Kegs: each keg → 2 gal color, remainder pails → 1 jar
-// Pails: 1 jar per pail
+// Drums: each drum → 4 gal color, remainder keg → 2 gal color, remainder pails → jars
+// Kegs: each keg → 2 gal color, remainder pails → jars
+// Pails: jars per pail (Neutral Concentrate: 2 jars per pail, others: 1 jar per pail)
 function getColorPlusForZone(zoneGallons, packaging, productName) {
   if (!zoneGallons || zoneGallons <= 0) return [];
   const pkg = parseInt(packaging);
+  const jarsPerPail = (productName === 'Neutral Concentrate') ? 2 : 1;
 
   if (pkg === 5 || productName === 'Ready Mix' || productName === 'PickleMaster RTU') {
     const pails = Math.ceil(zoneGallons / 5);
-    return [{ count: pails, unit: '24 OZ Jar(s)', isJar: true }];
+    return [{ count: pails * jarsPerPail, unit: '24 OZ Jar(s)', isJar: true }];
   }
 
   const mixed = calcMixedPackaging(zoneGallons, packaging);
@@ -347,7 +348,7 @@ function getColorPlusForZone(zoneGallons, packaging, productName) {
       entries.push({ count: gallonColor, unit: '1 Gallon Pail(s)', isJar: false });
     }
     if (mixed.pails > 0) {
-      entries.push({ count: mixed.pails, unit: '24 OZ Jar(s)', isJar: true });
+      entries.push({ count: mixed.pails * jarsPerPail, unit: '24 OZ Jar(s)', isJar: true });
     }
   } else if (pkg === 30) {
     const gallonColor = mixed.kegs * 2;
@@ -355,7 +356,7 @@ function getColorPlusForZone(zoneGallons, packaging, productName) {
       entries.push({ count: gallonColor, unit: '1 Gallon Pail(s)', isJar: false });
     }
     if (mixed.pails > 0) {
-      entries.push({ count: mixed.pails, unit: '24 OZ Jar(s)', isJar: true });
+      entries.push({ count: mixed.pails * jarsPerPail, unit: '24 OZ Jar(s)', isJar: true });
     }
   }
 
@@ -431,6 +432,8 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
   // Track per-zone container counts for the total row
   const productTotalContainers = {}; // prodName → { drums, kegs, pails }
   const productTotalSandLbs = {};    // prodName → lbs (for concentrate sand)
+  // Track color totals across zones: colorName → { gallons, jars, itemG, itemJ }
+  const colorTotals = {};
 
   zoneRawData.forEach(({ zone, zi, colorName, rawProducts }) => {
     const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
@@ -468,6 +471,16 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
             product: colorName, coats: '', gallons: '',
             packaging: pkgLabel, item: cpItem
           });
+          // Accumulate color totals
+          if (!colorTotals[colorName]) {
+            colorTotals[colorName] = { gallons: 0, jars: 0,
+              itemG: getColorPlusItemNumber(colorName, false),
+              itemJ: getColorPlusItemNumber(colorName, true) };
+          }
+          for (const cp of cpEntries) {
+            if (cp.isJar) colorTotals[colorName].jars += cp.count;
+            else colorTotals[colorName].gallons += cp.count;
+          }
         }
       }
     }
@@ -501,6 +514,18 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         });
       }
     }
+  }
+  // Color totals
+  for (const [colorName, ct] of Object.entries(colorTotals)) {
+    const parts = [];
+    if (ct.gallons > 0) parts.push(ct.gallons + ' - 1 Gallon Pail(s)');
+    if (ct.jars > 0) parts.push(ct.jars + ' - 24 OZ Jar(s)');
+    zoneTotalPackaging.push({
+      product: colorName,
+      gallons: '',
+      packaging: parts.join(' + '),
+      item: ct.gallons > 0 ? ct.itemG : ct.itemJ
+    });
   }
 
   // Striping
