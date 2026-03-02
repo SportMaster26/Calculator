@@ -347,7 +347,7 @@ function getColorPlusForZone(zoneGallons, packaging, productName) {
       entries.push({ count: gallonColor, unit: '1 Gallon Pail(s)', isJar: false });
     }
     if (mixed.pails > 0) {
-      entries.push({ count: 1, unit: '24 OZ Jar(s)', isJar: true });
+      entries.push({ count: mixed.pails, unit: '24 OZ Jar(s)', isJar: true });
     }
   } else if (pkg === 30) {
     const gallonColor = mixed.kegs * 2;
@@ -355,7 +355,7 @@ function getColorPlusForZone(zoneGallons, packaging, productName) {
       entries.push({ count: gallonColor, unit: '1 Gallon Pail(s)', isJar: false });
     }
     if (mixed.pails > 0) {
-      entries.push({ count: 1, unit: '24 OZ Jar(s)', isJar: true });
+      entries.push({ count: mixed.pails, unit: '24 OZ Jar(s)', isJar: true });
     }
   }
 
