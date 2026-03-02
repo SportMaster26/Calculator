@@ -461,11 +461,12 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       // ColorPlus per zone — based on this zone's mixed packaging
       if (colorName !== 'Not Selected') {
         const cpEntries = getColorPlusForZone(gallons, packaging, prodName);
-        for (const cp of cpEntries) {
-          const cpItem = getColorPlusItemNumber(colorName, cp.isJar);
+        if (cpEntries.length > 0) {
+          const pkgLabel = cpEntries.map(cp => cp.count + ' - ' + cp.unit).join(' + ');
+          const cpItem = getColorPlusItemNumber(colorName, cpEntries[0].isJar);
           zoneResult.products.push({
             product: colorName, coats: '', gallons: '',
-            packaging: cp.count + ' - ' + cp.unit, item: cpItem
+            packaging: pkgLabel, item: cpItem
           });
         }
       }
