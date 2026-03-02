@@ -15,6 +15,7 @@ const coverageReady = {
   'CushionMaster I (Fine Rubber)':   [0.10, 0.10, 0.10, 0.10],
   'CushionMaster II (Coarse Rubber)':[0.15, 0.15, 0.15, 0.15],
   'Neutral Ready Mix':               [0.07, 0.09, 0.07, 0.07],
+  'Neutral Concentrate w/ Sand':     [0.07, 0.09, 0.07, 0.07],
   'PickleMaster':                    [0.07, 0.09, 0.07, 0.07],
   'Ready Mix':                        [0.09, 0.11, 0.09, 0.09],
   'PickleMaster RTU':                [0.09, 0.11, 0.09, 0.09]
@@ -38,6 +39,7 @@ const itemNumbersReady = {
   'CushionMaster I (Fine Rubber)': 'C1450',
   'CushionMaster II (Coarse Rubber)': 'C1460',
   'Neutral Ready Mix': 'C1285',
+  'Neutral Concentrate w/ Sand': 'C1365',
   'PickleMaster': 'C1298',
   'Ready Mix': 'C1285P',
   'PickleMaster RTU': 'C1299P'
@@ -179,14 +181,16 @@ function getZoneProductsRTU(courtType, zoneName) {
 }
 
 // ── Products per zone per court type (Concentrate w/ Sand) ──
-function getZoneProductsConcWithSand(courtType, zoneName) {
+// Pails → Neutral Ready Mix (C1285P), Kegs/Drums → Neutral Concentrate w/ Sand (C1365K/D)
+function getZoneProductsConcWithSand(courtType, zoneName, packaging) {
   if (courtType === 'pickleball') {
     return [
       ['PickleMaster', 2]
     ];
   }
+  const prodName = (parseInt(packaging) === 5) ? 'Neutral Ready Mix' : 'Neutral Concentrate w/ Sand';
   return [
-    ['Neutral Ready Mix', 2]
+    [prodName, 2]
   ];
 }
 
@@ -413,7 +417,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     const prods = mixType === 'ready'
       ? getZoneProductsRTU(entry.courtType, zone.name)
       : mixType === 'concWithSand'
-        ? getZoneProductsConcWithSand(entry.courtType, zone.name)
+        ? getZoneProductsConcWithSand(entry.courtType, zone.name, packaging)
         : getZoneProductsConc(entry.courtType, zone.name);
 
     const rawProducts = [];
