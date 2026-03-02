@@ -445,7 +445,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
     for (const { prodName, coats, gallons } of rawProducts) {
       // Calculate mixed packaging for this zone's gallons
       const mixed = calcMixedPackaging(gallons, packaging);
-      const isConcentrate = (prodName === 'Neutral Concentrate');
+      const isConcentrate = (prodName === 'Neutral Concentrate' || prodName === 'Neutral Concentrate w/ Sand');
       const hasPailRemainder = isConcentrate && mixed.pails > 0 && (mixed.drums > 0 || mixed.kegs > 0);
 
       if (hasPailRemainder) {
@@ -476,10 +476,12 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         }
         productTotalContainers['Neutral Ready Mix'].pails += mixed.pails;
 
-        // Sand for concentrate — only on drums/kegs (no sand for Ready Mix pails)
-        const concOnly = { drums: mixed.drums, kegs: mixed.kegs, pails: 0 };
-        const sandLbs = calcMixedSandLbs(concOnly, getColorSandLbs);
-        productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
+        // Sand for concentrate — only on drums/kegs, only for plain Neutral Concentrate
+        if (prodName === 'Neutral Concentrate') {
+          const concOnly = { drums: mixed.drums, kegs: mixed.kegs, pails: 0 };
+          const sandLbs = calcMixedSandLbs(concOnly, getColorSandLbs);
+          productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
+        }
 
         // ColorPlus: gallon color for drums/kegs, 1 jar per pail for Ready Mix
         if (colorName !== 'Not Selected') {
@@ -518,8 +520,8 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         productTotalContainers[prodName].kegs += mixed.kegs;
         productTotalContainers[prodName].pails += mixed.pails;
 
-        // Sand for concentrate — per zone
-        if (isConcentrate) {
+        // Sand for concentrate — per zone (only plain Neutral Concentrate)
+        if (prodName === 'Neutral Concentrate') {
           const sandLbs = calcMixedSandLbs(mixed, getColorSandLbs);
           productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
         }
