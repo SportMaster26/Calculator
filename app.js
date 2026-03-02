@@ -228,6 +228,11 @@ function getItemNumber(productName, packaging, mixType) {
   return base + suffix;
 }
 
+function displayName(prodName) {
+  if (prodName === 'Ready Mix') return 'Neutral Ready Mix';
+  return prodName;
+}
+
 function getPackageSize(packaging) {
   return parseInt(packaging, 10);
 }
@@ -454,7 +459,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         if (mixed.drums > 0) concParts.push(fmtPkg(mixed.drums, '55'));
         if (mixed.kegs > 0) concParts.push(fmtPkg(mixed.kegs, '30'));
         zoneResult.products.push({
-          product: prodName, coats, gallons,
+          product: displayName(prodName), coats, gallons,
           packaging: concParts.join(' + '),
           item: getItemNumber(prodName, packaging, mixType)
         });
@@ -508,7 +513,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       } else {
         // Normal path: single product line
         zoneResult.products.push({
-          product: prodName, coats, gallons,
+          product: displayName(prodName), coats, gallons,
           packaging: mixed.label,
           item: getItemNumber(prodName, packaging, mixType)
         });
@@ -564,7 +569,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
       if (totals.pails > 0) parts.push(fmtPkg(totals.pails, '5'));
       const itemNum = (prodName === 'Neutral Ready Mix') ? 'C1285P' : getItemNumber(prodName, packaging, mixType);
       zoneTotalPackaging.push({
-        product: prodName,
+        product: displayName(prodName),
         gallons: '',
         packaging: parts.join(' + '),
         item: itemNum
