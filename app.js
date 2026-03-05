@@ -14,11 +14,11 @@ const coverageReady = {
   'Acrylic Resurfacer w/ Sand':      [0.11, 0.13, 0.11, 0.11],
   'CushionMaster I (Fine Rubber)':   [0.10, 0.10, 0.10, 0.10],
   'CushionMaster II (Coarse Rubber)':[0.15, 0.15, 0.15, 0.15],
-  'Neutral Ready Mix':               [0.07, 0.09, 0.07, 0.07],
-  'Neutral Concentrate w/ Sand':     [0.07, 0.09, 0.07, 0.07],
-  'PickleMaster':                    [0.07, 0.09, 0.07, 0.07],
-  'Ready Mix':                        [0.09, 0.11, 0.09, 0.09],
-  'PickleMaster RTU':                [0.09, 0.11, 0.09, 0.09]
+  'Neutral Ready Mix':               [0.07, 0.07, 0.07, 0.07],
+  'Neutral Concentrate w/ Sand':     [0.07, 0.07, 0.07, 0.07],
+  'PickleMaster':                    [0.07, 0.07, 0.07, 0.07],
+  'Ready Mix':                        [0.09, 0.09, 0.09, 0.09],
+  'PickleMaster RTU':                [0.09, 0.09, 0.09, 0.09]
 };
 
 const coverageConc = {
@@ -27,9 +27,9 @@ const coverageConc = {
   'Flexible Acrylic Resurfacer':     [0.07, 0.09, 0.07, 0.07],
   'CushionMaster I (Fine Rubber)':   [0.10, 0.10, 0.10, 0.10],
   'CushionMaster II (Coarse Rubber)':[0.15, 0.15, 0.15, 0.15],
-  'Neutral Concentrate':             [0.05, 0.07, 0.05, 0.05],
-  'Flexible Concentrate':            [0.05, 0.07, 0.05, 0.05],
-  'PickleMaster':                    [0.07, 0.09, 0.07, 0.07]
+  'Neutral Concentrate':             [0.05, 0.05, 0.05, 0.05],
+  'Flexible Concentrate':            [0.05, 0.05, 0.05, 0.05],
+  'PickleMaster':                    [0.07, 0.07, 0.07, 0.07]
 };
 
 // ── Item number lookup (base numbers from catalog) ──
