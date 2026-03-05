@@ -878,17 +878,19 @@ function readEntryFromDOM(entry) {
 }
 
 // Convert entry dimensions to total square feet regardless of input mode
+// Dimensions represent a single court; multiply by numCourts for total area
 function getEntrySqFt(entry) {
+  let singleCourtSqFt = 0;
   if (entry.areaInputMode === 'wxl') {
-    return entry.width * entry.length;
+    singleCourtSqFt = entry.width * entry.length;
   } else if (entry.areaInputMode === 'sqft') {
-    return entry.areaValue;
+    singleCourtSqFt = entry.areaValue;
   } else if (entry.areaInputMode === 'sqyd') {
-    return entry.areaValue * SQFT_PER_SQYD;
+    singleCourtSqFt = entry.areaValue * SQFT_PER_SQYD;
   } else if (entry.areaInputMode === 'sqm') {
-    return entry.areaValue * SQFT_PER_SQM;
+    singleCourtSqFt = entry.areaValue * SQFT_PER_SQM;
   }
-  return 0;
+  return singleCourtSqFt * (entry.numCourts || 1);
 }
 
 // Return total area in the user's selected unit for display
