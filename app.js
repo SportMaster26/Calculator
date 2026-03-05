@@ -10,7 +10,7 @@ const SQFT_PER_SQM = 10.7639;
 // ── Coverage rate tables (from "55 GALLONS READY" / "55 GALLONS CONC" sheets) ──
 // Columns: [Concrete, Asphalt, Existing Concrete, Existing Asphalt]
 const coverageReady = {
-  'Acrylic Adhesion Promoter':       [0.04, null, 0.04, null],
+  'Acrylic Adhesion Promoter':       [0.023, null, 0.023, null],
   'Acrylic Resurfacer w/ Sand':      [0.11, 0.13, 0.11, 0.11],
   'CushionMaster I (Fine Rubber)':   [0.10, 0.10, 0.10, 0.10],
   'CushionMaster II (Coarse Rubber)':[0.15, 0.15, 0.15, 0.15],
@@ -22,7 +22,7 @@ const coverageReady = {
 };
 
 const coverageConc = {
-  'Acrylic Adhesion Promoter':       [0.04, null, 0.04, null],
+  'Acrylic Adhesion Promoter':       [0.023, null, 0.023, null],
   'Acrylic Resurfacer':              [0.07, 0.09, 0.07, 0.07],
   'Flexible Acrylic Resurfacer':     [0.07, 0.09, 0.07, 0.07],
   'CushionMaster I (Fine Rubber)':   [0.10, 0.10, 0.10, 0.10],
