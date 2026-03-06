@@ -445,7 +445,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
   const colorTotals = {};
 
   zoneRawData.forEach(({ zone, zi, colorName, rawProducts }) => {
-    const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, products: [] };
+    const zoneResult = { name: zone.name, sqft: zone.sqft, sqyd: zone.sqyd, colorName, products: [] };
 
     for (const { prodName, coats, gallons } of rawProducts) {
       // Calculate mixed packaging for this zone's gallons
@@ -1195,16 +1195,11 @@ function renderResults() {
     zoneHtml += `<tr class="zone-header"><td colspan="5">${courtLabel}</td></tr>`;
     for (const zone of r.zones) {
       if (zone.products.length === 0) continue;
-      zoneHtml += `<tr class="zone-subheader"><td colspan="5">${zone.name} (${fmt(zone.sqft)} sq ft)</td></tr>`;
+      const zoneColorHex = getColorHex(zone.colorName || 'Not Selected');
+      const zoneColorLabel = zone.colorName && zone.colorName !== 'Not Selected' ? ` — ${zone.colorName}` : '';
+      zoneHtml += `<tr class="zone-subheader"><td colspan="5"><span class="legend-swatch" style="background:${zoneColorHex};vertical-align:middle;margin-right:6px"></span>${zone.name} (${fmt(zone.sqft)} sq ft)${zoneColorLabel}</td></tr>`;
       for (const p of zone.products) {
         zoneHtml += `<tr><td>${p.product}</td><td>${p.coats}</td><td>${typeof p.gallons === 'number' ? fmt(p.gallons) : p.gallons}</td><td>${p.packaging}</td><td>${p.item}</td></tr>`;
-      }
-    }
-    // Total packaging row — aggregated across all zones for this court
-    if (r.zoneTotalPackaging && r.zoneTotalPackaging.length > 0) {
-      zoneHtml += `<tr class="total-packaging-header"><td colspan="5">Total Packaging Needed</td></tr>`;
-      for (const t of r.zoneTotalPackaging) {
-        zoneHtml += `<tr><td>${t.product}</td><td></td><td>${typeof t.gallons === 'number' ? fmt(t.gallons) : t.gallons}</td><td>${t.packaging}</td><td>${t.item}</td></tr>`;
       }
     }
   });
@@ -1421,6 +1416,24 @@ function printMaterialsList() {
     tableRows += '</tr>';
   });
 
+  // Build Court Zone Product Options rows for PDF
+  let zoneRows = '';
+  entryResults.forEach((r, ri) => {
+    const courtLabel = entryResults.length > 1
+      ? (r.label + ' (Court ' + (ri + 1) + ') &mdash; ' + r.numCourts + ' court' + (r.numCourts > 1 ? 's' : '') + ' &mdash; ' + fmt(r.totalSqFt) + ' sq ft')
+      : (r.label + ' (' + r.numCourts + ') &mdash; ' + fmt(r.totalSqFt) + ' sq ft');
+    zoneRows += '<tr class="zone-header"><td colspan="5">' + courtLabel + '</td></tr>';
+    for (const zone of r.zones) {
+      if (zone.products.length === 0) continue;
+      const hex = getColorHex(zone.colorName || 'Not Selected');
+      const colorLabel = zone.colorName && zone.colorName !== 'Not Selected' ? ' &mdash; ' + zone.colorName : '';
+      zoneRows += '<tr class="zone-subheader"><td colspan="5"><span class="swatch" style="background:' + hex + '"></span>' + zone.name + ' (' + fmt(zone.sqft) + ' sq ft)' + colorLabel + '</td></tr>';
+      for (const p of zone.products) {
+        zoneRows += '<tr><td>' + p.product + '</td><td>' + p.coats + '</td><td>' + (typeof p.gallons === 'number' ? fmt(p.gallons) : p.gallons) + '</td><td>' + p.packaging + '</td><td>' + p.item + '</td></tr>';
+      }
+    }
+  });
+
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -1429,6 +1442,7 @@ function printMaterialsList() {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #2c3e50; padding: 32px; }
     h1 { font-size: 1.4rem; color: #1a5276; margin-bottom: 4px; }
+    h2 { font-size: 1.1rem; color: #1a5276; margin-top: 28px; margin-bottom: 4px; }
     .subtitle { font-size: 0.9rem; color: #5d6d7e; margin-bottom: 20px; }
     .info { font-size: 0.85rem; color: #2c3e50; margin-bottom: 16px; }
     .info strong { color: #1a5276; }
@@ -1436,8 +1450,14 @@ function printMaterialsList() {
     th { background: #1a5276; color: #fff; padding: 8px 10px; text-align: left; font-size: 0.78rem; text-transform: uppercase; }
     td { padding: 7px 10px; border-bottom: 1px solid #d5dbdb; }
     tr:nth-child(even) { background: #f7f9fb; }
+    .zone-header td { background: #d6eaf8; font-weight: 700; color: #1a5276; padding: 8px 10px; border-bottom: 2px solid #2980b9; }
+    .zone-subheader td { background: #eef4fa; font-weight: 600; color: #2c3e50; padding: 6px 10px 6px 20px; border-bottom: 1px solid #d6eaf8; font-size: 0.84rem; }
+    .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.15); vertical-align: middle; margin-right: 6px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .footer { margin-top: 24px; font-size: 0.75rem; color: #5d6d7e; border-top: 1px solid #d5dbdb; padding-top: 12px; }
-    @media print { body { padding: 16px; } }
+    @media print {
+      body { padding: 16px; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    }
   </style>
 </head>
 <body>
@@ -1447,6 +1467,11 @@ function printMaterialsList() {
   <table>
     <thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>
     <tbody>${tableRows}</tbody>
+  </table>
+  <h2>Court Zone Product Options</h2>
+  <table>
+    <thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>
+    <tbody>${zoneRows}</tbody>
   </table>
   <div class="footer">SportMaster Product Calculator — Coverage rates may vary. Consult ASBA standards for overrun requirements.</div>
   <script>window.onload = function() { window.print(); };<\/script>
