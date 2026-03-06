@@ -1400,23 +1400,47 @@ function printMaterialsList() {
   const { materials, entryResults } = collectAllMaterials();
 
   const totalSqFt = entryResults.reduce((sum, r) => sum + r.totalSqFt, 0);
+  const totalSqYd = totalSqFt / SQFT_PER_SQYD;
+  const totalSqM = totalSqFt / SQFT_PER_SQM;
   const courtSummary = courtEntries.map(e => {
     const def = courtDefs[e.courtType];
     return e.numCourts + ' ' + def.label + (e.numCourts > 1 ? 's' : '');
   }).join(', ');
 
-  let tableRows = '';
-  materials.forEach(m => {
-    tableRows += '<tr>';
-    tableRows += '<td>' + m.product + '</td>';
-    tableRows += '<td>' + (m.coats || '') + '</td>';
-    tableRows += '<td>' + (typeof m.gallons === 'number' ? fmt(m.gallons) : (m.gallons || '')) + '</td>';
-    tableRows += '<td>' + (m.packaging || '') + '</td>';
-    tableRows += '<td>' + (m.item || '') + '</td>';
-    tableRows += '</tr>';
+  // 1. Zone Area Breakdown
+  let zoneAreaRows = '';
+  entryResults.forEach((r, ri) => {
+    const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
+    r.zoneAreas.forEach(z => {
+      zoneAreaRows += '<tr><td>' + courtLabel + '</td><td>' + z.name + '</td><td>' + fmt(z.sqft) + '</td><td>' + fmt(z.sqyd) + '</td></tr>';
+    });
   });
 
-  // Build Court Zone Product Options rows for PDF
+  // 2. Crack Filler Estimates
+  let crackRows = '';
+  let anyCrack = false;
+  entryResults.forEach(r => {
+    if (!r.crackFiller || !r.crackLinearFeet || r.crackLinearFeet <= 0) return;
+    anyCrack = true;
+    const f = crackFillers.find(cf => cf.product === r.crackFillerType) || crackFillers[0];
+    const gallons = Math.ceil(r.crackLinearFeet / f.rateMin);
+    crackRows += '<tr><td>' + r.label + ' (' + r.crackLinearFeet + ' linear ft)</td><td>' + f.product + '</td><td>' + f.rateMin + '-' + f.rateMax + '</td><td>' + f.width + '</td><td>' + gallons + ' gallon' + (gallons !== 1 ? 's' : '') + '</td><td>' + gallons + '- 1 Gallon Jug(s)</td><td>' + f.item + '</td></tr>';
+  });
+
+  // 3. Total Area Materials (Resurfacer) — per entry
+  let totalAreaRows = '';
+  entryResults.forEach((r, ri) => {
+    const g = calculateGlobalProducts(r.totalSqFt, surfaceType, r.packaging, r.mixType);
+    if (entryResults.length > 1) {
+      const courtLabel = r.label + ' (Court ' + (ri + 1) + ')';
+      totalAreaRows += '<tr class="zone-header"><td colspan="5">' + courtLabel + '</td></tr>';
+    }
+    for (const item of g.totalArea) {
+      totalAreaRows += '<tr><td>' + item.product + '</td><td>' + item.coats + '</td><td>' + item.gallons + '</td><td>' + item.packaging + '</td><td>' + item.item + '</td></tr>';
+    }
+  });
+
+  // 4. Court Zone Product Options
   let zoneRows = '';
   entryResults.forEach((r, ri) => {
     const courtLabel = entryResults.length > 1
@@ -1434,6 +1458,80 @@ function printMaterialsList() {
     }
   });
 
+  // 5. ProCushion Layers
+  let cushionRows = '';
+  let anyCushion = false;
+  entryResults.forEach((r, ri) => {
+    if (r.cushionSystem === 'none') return;
+    const g = calculateGlobalProducts(r.totalSqFt, surfaceType, r.packaging, r.mixType);
+    const selectedLabel = r.cushionSystem === 'standard' ? 'Standard System' : 'Premium System';
+    const selected = g.cushion.find(s => s.system === selectedLabel);
+    if (selected) {
+      anyCushion = true;
+      const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
+      cushionRows += '<tr class="zone-header"><td colspan="5">' + courtLabel + ' &mdash; ' + selectedLabel + '</td></tr>';
+      for (const item of selected.items) {
+        cushionRows += '<tr><td>' + item.product + '</td><td>' + item.coats + '</td><td>' + item.gallons + '</td><td>' + item.packaging + '</td><td>' + item.item + '</td></tr>';
+      }
+    }
+  });
+
+  // 6. Striping
+  let stripingRows = '';
+  let anyStriping = false;
+  entryResults.forEach((r, ri) => {
+    if (r.striping.length === 0) return;
+    anyStriping = true;
+    const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
+    stripingRows += '<tr class="zone-header"><td colspan="4">' + courtLabel + '</td></tr>';
+    for (const s of r.striping) {
+      stripingRows += '<tr><td>' + s.product + '</td><td>' + s.gallons + '</td><td>' + s.packaging + '</td><td>' + s.item + '</td></tr>';
+    }
+  });
+
+  // Build sections HTML
+  let sectionsHtml = '';
+
+  // Zone Area Breakdown
+  sectionsHtml += '<h2>Zone Area Breakdown</h2>';
+  sectionsHtml += '<table><thead><tr><th>Court</th><th>Zone</th><th>Square Feet</th><th>Square Yards</th></tr></thead>';
+  sectionsHtml += '<tbody>' + zoneAreaRows + '</tbody></table>';
+
+  // Crack Filler (only if applicable)
+  if (anyCrack) {
+    sectionsHtml += '<h2>Crack Filler Estimates</h2>';
+    sectionsHtml += '<table><thead><tr><th>Court</th><th>Product</th><th>Linear Ft / Gallon</th><th>Recommended Width</th><th>Gallons Needed (Est.)</th><th>Packaging</th><th>Item Number</th></tr></thead>';
+    sectionsHtml += '<tbody>' + crackRows + '</tbody></table>';
+  }
+
+  // Total Area Materials (Resurfacer)
+  sectionsHtml += '<h2>Total Area Materials (Resurfacer)</h2>';
+  sectionsHtml += '<table><thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
+  sectionsHtml += '<tbody>' + totalAreaRows + '</tbody></table>';
+
+  // Court Zone Product Options
+  sectionsHtml += '<h2>Court Zone Product Options</h2>';
+  sectionsHtml += '<table><thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
+  sectionsHtml += '<tbody>' + zoneRows + '</tbody></table>';
+
+  // ProCushion (only if applicable)
+  if (anyCushion) {
+    sectionsHtml += '<h2>ProCushion Layers</h2>';
+    sectionsHtml += '<table><thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
+    sectionsHtml += '<tbody>' + cushionRows + '</tbody></table>';
+  }
+
+  // Striping
+  if (anyStriping) {
+    sectionsHtml += '<h2>Striping</h2>';
+    sectionsHtml += '<table><thead><tr><th>Material</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
+    sectionsHtml += '<tbody>' + stripingRows + '</tbody></table>';
+  } else {
+    sectionsHtml += '<h2>Striping</h2>';
+    sectionsHtml += '<table><thead><tr><th>Material</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
+    sectionsHtml += '<tbody><tr><td colspan="4">N/A for this court type</td></tr></tbody></table>';
+  }
+
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -1444,8 +1542,8 @@ function printMaterialsList() {
     h1 { font-size: 1.4rem; color: #1a5276; margin-bottom: 4px; }
     h2 { font-size: 1.1rem; color: #1a5276; margin-top: 28px; margin-bottom: 4px; }
     .subtitle { font-size: 0.9rem; color: #5d6d7e; margin-bottom: 20px; }
-    .info { font-size: 0.85rem; color: #2c3e50; margin-bottom: 16px; }
-    .info strong { color: #1a5276; }
+    .summary { font-size: 0.85rem; color: #2c3e50; margin-bottom: 16px; }
+    .summary strong { color: #1a5276; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 12px; }
     th { background: #1a5276; color: #fff; padding: 8px 10px; text-align: left; font-size: 0.78rem; text-transform: uppercase; }
     td { padding: 7px 10px; border-bottom: 1px solid #d5dbdb; }
@@ -1461,18 +1559,10 @@ function printMaterialsList() {
   </style>
 </head>
 <body>
-  <h1>SportMaster — Total Materials Needed</h1>
+  <h1>SportMaster — Materials List</h1>
   <p class="subtitle">Generated ${new Date().toLocaleDateString()}</p>
-  <p class="info"><strong>Courts:</strong> ${courtSummary} &nbsp;|&nbsp; <strong>Surface:</strong> ${surfaceLabel} &nbsp;|&nbsp; <strong>Total Area:</strong> ${fmt(totalSqFt)} sq ft</p>
-  <table>
-    <thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>
-    <tbody>${tableRows}</tbody>
-  </table>
-  <h2>Court Zone Product Options</h2>
-  <table>
-    <thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>
-    <tbody>${zoneRows}</tbody>
-  </table>
+  <p class="summary"><strong>Courts:</strong> ${courtSummary} &nbsp;|&nbsp; <strong>Surface:</strong> ${surfaceLabel} &nbsp;|&nbsp; <strong>Total Area:</strong> ${fmt(totalSqFt)} sq ft &nbsp;|&nbsp; ${fmt(totalSqYd)} sq yd &nbsp;|&nbsp; ${fmt(totalSqM)} sq m</p>
+  ${sectionsHtml}
   <div class="footer">SportMaster Product Calculator — Coverage rates may vary. Consult ASBA standards for overrun requirements.</div>
   <script>window.onload = function() { window.print(); };<\/script>
 </body>
