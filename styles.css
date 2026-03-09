@@ -448,7 +448,6 @@ tbody tr:hover {
   font-weight: 700;
   letter-spacing: 0.05em;
 }
-.auth-role-admin    { background: #e74c3c; color: #fff; }
 .auth-role-operator { background: #f39c12; color: #fff; }
 .auth-role-viewer   { background: #7f8c8d; color: #fff; }
 .btn-logout {

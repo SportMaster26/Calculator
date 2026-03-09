@@ -1,12 +1,10 @@
 // ── SportMaster Authentication System ──
-// Roles: admin (full edit), operator (standard edit), viewer (read-only)
+// Roles: operator (full edit access), viewer (read-only)
 
 const AUTH_USERS = [
-  // Admin — full access to edit everything
-  { username: 'tmahl',    name: 'TJ Mahl',        role: 'admin',    password: 'SportMaster2024!' },
-  { username: 'kherrin',  name: 'Kevin Herrin',    role: 'admin',    password: 'SportMaster2024!' },
-
-  // Operator — standard edit access
+  // Operator — full edit access
+  { username: 'tmahl',    name: 'TJ Mahl',        role: 'operator', password: 'SportMaster2024!' },
+  { username: 'kherrin',  name: 'Kevin Herrin',    role: 'operator', password: 'SportMaster2024!' },
   { username: 'floor',    name: 'Floor',           role: 'operator', password: 'Floor2024!' },
   { username: 'platform', name: 'Platform',        role: 'operator', password: 'Platform2024!' },
 
@@ -65,8 +63,7 @@ function authRequire() {
   return session;
 }
 
-function authIsAdmin(session)    { return session && session.role === 'admin'; }
-function authIsOperator(session) { return session && (session.role === 'admin' || session.role === 'operator'); }
+function authIsOperator(session) { return session && session.role === 'operator'; }
 function authIsViewer(session)   { return session && session.role === 'viewer'; }
 
 // Apply role-based restrictions to the calculator page
