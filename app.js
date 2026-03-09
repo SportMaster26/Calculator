@@ -1394,7 +1394,7 @@ function collectAllMaterials() {
   return { materials: Object.values(materials), entryResults };
 }
 
-function printMaterialsList() {
+function buildMaterialsSummary() {
   const surfaceType = $('surfaceType').value;
   const surfaceLabel = { concrete: 'New Concrete', asphalt: 'New Asphalt', existingConcrete: 'Existing Concrete', existingAsphalt: 'Existing Asphalt' }[surfaceType];
   const { materials, entryResults } = collectAllMaterials();
@@ -1492,36 +1492,30 @@ function printMaterialsList() {
   // Build sections HTML
   let sectionsHtml = '';
 
-  // Zone Area Breakdown
   sectionsHtml += '<h2>Zone Area Breakdown</h2>';
   sectionsHtml += '<table><thead><tr><th>Court</th><th>Zone</th><th>Square Feet</th><th>Square Yards</th></tr></thead>';
   sectionsHtml += '<tbody>' + zoneAreaRows + '</tbody></table>';
 
-  // Crack Filler (only if applicable)
   if (anyCrack) {
     sectionsHtml += '<h2>Crack Filler Estimates</h2>';
     sectionsHtml += '<table><thead><tr><th>Court</th><th>Product</th><th>Linear Ft / Gallon</th><th>Recommended Width</th><th>Gallons Needed (Est.)</th><th>Packaging</th><th>Item Number</th></tr></thead>';
     sectionsHtml += '<tbody>' + crackRows + '</tbody></table>';
   }
 
-  // Total Area Materials (Resurfacer)
   sectionsHtml += '<h2>Total Area Materials (Resurfacer)</h2>';
   sectionsHtml += '<table><thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
   sectionsHtml += '<tbody>' + totalAreaRows + '</tbody></table>';
 
-  // Court Zone Product Options
   sectionsHtml += '<h2>Court Zone Product Options</h2>';
   sectionsHtml += '<table><thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
   sectionsHtml += '<tbody>' + zoneRows + '</tbody></table>';
 
-  // ProCushion (only if applicable)
   if (anyCushion) {
     sectionsHtml += '<h2>ProCushion Layers</h2>';
     sectionsHtml += '<table><thead><tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
     sectionsHtml += '<tbody>' + cushionRows + '</tbody></table>';
   }
 
-  // Striping
   if (anyStriping) {
     sectionsHtml += '<h2>Striping</h2>';
     sectionsHtml += '<table><thead><tr><th>Material</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
@@ -1531,6 +1525,12 @@ function printMaterialsList() {
     sectionsHtml += '<table><thead><tr><th>Material</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr></thead>';
     sectionsHtml += '<tbody><tr><td colspan="4">N/A for this court type</td></tr></tbody></table>';
   }
+
+  return { sectionsHtml, surfaceLabel, courtSummary, totalSqFt, totalSqYd, totalSqM };
+}
+
+function printMaterialsList() {
+  const { sectionsHtml, surfaceLabel, courtSummary, totalSqFt, totalSqYd, totalSqM } = buildMaterialsSummary();
 
   const html = `<!DOCTYPE html>
 <html>
@@ -1577,3 +1577,158 @@ init();
 
 // Bind print button
 $('printMaterialsBtn').addEventListener('click', printMaterialsList);
+
+// ── Send to Representative ──
+
+// *** EMAILJS CONFIGURATION ***
+// To enable email sending:
+// 1. Create a free account at https://www.emailjs.com/
+// 2. Add an email service (Gmail, Outlook, etc.)
+// 3. Create an email template with these variables:
+//    {{to_email}}, {{rep_name}}, {{from_name}}, {{from_email}},
+//    {{from_phone}}, {{state}}, {{county}}, {{court_summary}},
+//    {{surface}}, {{total_area}}, {{materials_html}}
+// 4. Replace the three values below with your IDs:
+const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY';
+const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+
+// Populate state dropdown from territories data
+function initRepDropdowns() {
+  const stateSelect = $('repState');
+  const states = Object.keys(TERRITORIES).sort();
+  states.forEach(state => {
+    const opt = document.createElement('option');
+    opt.value = state;
+    opt.textContent = state;
+    stateSelect.appendChild(opt);
+  });
+
+  stateSelect.addEventListener('change', onStateChange);
+  $('repCounty').addEventListener('change', onCountyChange);
+  $('senderName').addEventListener('input', validateRepForm);
+  $('senderEmail').addEventListener('input', validateRepForm);
+  $('senderPhone').addEventListener('input', validateRepForm);
+  $('sendToRepBtn').addEventListener('click', sendToRep);
+}
+
+function onStateChange() {
+  const state = $('repState').value;
+  const countySelect = $('repCounty');
+
+  // Reset county
+  countySelect.innerHTML = '<option value="">— Select County —</option>';
+  countySelect.disabled = !state;
+
+  // Reset rep display
+  $('repInfoDisplay').classList.add('hidden');
+  $('repNameDisplay').textContent = '';
+
+  if (state && TERRITORIES[state]) {
+    const counties = Object.keys(TERRITORIES[state]).sort();
+    counties.forEach(county => {
+      const opt = document.createElement('option');
+      opt.value = county;
+      opt.textContent = county;
+      countySelect.appendChild(opt);
+    });
+  }
+
+  validateRepForm();
+}
+
+function onCountyChange() {
+  const state = $('repState').value;
+  const county = $('repCounty').value;
+  const repDisplay = $('repInfoDisplay');
+  const repName = $('repNameDisplay');
+
+  if (state && county && TERRITORIES[state] && TERRITORIES[state][county]) {
+    const rep = TERRITORIES[state][county];
+    repName.textContent = rep.repName;
+    repDisplay.classList.remove('hidden');
+  } else {
+    repDisplay.classList.add('hidden');
+    repName.textContent = '';
+  }
+
+  validateRepForm();
+}
+
+function validateRepForm() {
+  const state = $('repState').value;
+  const county = $('repCounty').value;
+  const name = $('senderName').value.trim();
+  const email = $('senderEmail').value.trim();
+  const phone = $('senderPhone').value.trim();
+
+  const valid = state && county && name && email && phone
+    && TERRITORIES[state] && TERRITORIES[state][county];
+
+  $('sendToRepBtn').disabled = !valid;
+  return valid;
+}
+
+function sendToRep() {
+  if (!validateRepForm()) return;
+
+  const state = $('repState').value;
+  const county = $('repCounty').value;
+  const rep = TERRITORIES[state][county];
+  const senderName = $('senderName').value.trim();
+  const senderEmail = $('senderEmail').value.trim();
+  const senderPhone = $('senderPhone').value.trim();
+
+  const { sectionsHtml, surfaceLabel, courtSummary, totalSqFt, totalSqYd, totalSqM } = buildMaterialsSummary();
+
+  const totalArea = fmt(totalSqFt) + ' sq ft | ' + fmt(totalSqYd) + ' sq yd | ' + fmt(totalSqM) + ' sq m';
+
+  const btn = $('sendToRepBtn');
+  const status = $('sendStatus');
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  status.classList.add('hidden');
+  status.classList.remove('success', 'error');
+
+  // Check if EmailJS is configured
+  if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+    status.textContent = 'EmailJS is not configured yet. Please set up your EmailJS account and update the keys in app.js.';
+    status.classList.remove('hidden');
+    status.classList.add('error');
+    btn.disabled = false;
+    btn.textContent = 'Send to Representative';
+    return;
+  }
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    to_email: rep.repEmail,
+    rep_name: rep.repName,
+    from_name: senderName,
+    from_email: senderEmail,
+    from_phone: senderPhone,
+    state: state,
+    county: county,
+    court_summary: courtSummary,
+    surface: surfaceLabel,
+    total_area: totalArea,
+    materials_html: sectionsHtml
+  }, EMAILJS_PUBLIC_KEY).then(function() {
+    status.textContent = 'Materials list sent successfully to ' + rep.repName + '!';
+    status.classList.remove('hidden', 'error');
+    status.classList.add('success');
+    btn.textContent = 'Send to Representative';
+    btn.disabled = false;
+  }, function(error) {
+    status.textContent = 'Failed to send. Please try again or contact support. (' + (error.text || 'Unknown error') + ')';
+    status.classList.remove('hidden', 'success');
+    status.classList.add('error');
+    btn.textContent = 'Send to Representative';
+    btn.disabled = false;
+  });
+}
+
+// Initialize rep dropdowns after territories.js is loaded
+if (typeof TERRITORIES !== 'undefined') {
+  initRepDropdowns();
+}
