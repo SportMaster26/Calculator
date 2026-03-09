@@ -1591,7 +1591,7 @@ $('printMaterialsBtn').addEventListener('click', printMaterialsList);
 // 4. Replace the three values below with your IDs:
 const EMAILJS_PUBLIC_KEY = 'xtYEqq9NHfBaXKC1p';
 const EMAILJS_SERVICE_ID = 'service_2pip3bv';
-const EMAILJS_TEMPLATE_ID = 'service_2pip3bv';
+const EMAILJS_TEMPLATE_ID = 'template_dqd5h6g';
 
 // Populate state dropdown from territories data
 function initRepDropdowns() {
