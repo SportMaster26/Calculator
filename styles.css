@@ -102,7 +102,9 @@ label > span {
 }
 select,
 input[type="number"],
-input[type="text"] {
+input[type="text"],
+input[type="email"],
+input[type="tel"] {
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 5px;
@@ -334,6 +336,61 @@ tbody tr:hover {
 }
 .btn-print:hover {
   background: var(--accent-light);
+}
+
+/* ── Send to Rep Button ── */
+.btn-send {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-top: 14px;
+  background: #27ae60;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.02em;
+}
+.btn-send:hover:not(:disabled) {
+  background: #2ecc71;
+}
+.btn-send:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+/* ── Rep Info Display ── */
+.rep-info {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #eafaf1;
+  border-left: 4px solid #27ae60;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+/* ── Send Status Message ── */
+.send-status {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+}
+.send-status.success {
+  background: #eafaf1;
+  color: #27ae60;
+  border: 1px solid #27ae60;
+}
+.send-status.error {
+  background: #fde8e8;
+  color: #c0392b;
+  border: 1px solid #e74c3c;
 }
 
 /* ── Print Media ── */

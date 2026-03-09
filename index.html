@@ -113,8 +113,53 @@
       <section class="card no-print" aria-label="Print">
         <button id="printMaterialsBtn" class="btn-print">Download PDF / Print Materials List</button>
       </section>
+
+      <!-- ─── Send to Representative ─── -->
+      <section class="card no-print" aria-label="Send to Representative">
+        <h2>Send to Representative</h2>
+        <p class="step-hint">Select your location and enter your contact info to send the materials list to your local rep.</p>
+
+        <div class="form-row">
+          <label>
+            <span>State</span>
+            <select id="repState">
+              <option value="">— Select State —</option>
+            </select>
+          </label>
+          <label>
+            <span>County</span>
+            <select id="repCounty" disabled>
+              <option value="">— Select County —</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="repInfoDisplay" class="rep-info hidden">
+          <strong>Your Representative:</strong> <span id="repNameDisplay"></span>
+        </div>
+
+        <div class="form-row" style="margin-top: 14px;">
+          <label>
+            <span>Your Name</span>
+            <input type="text" id="senderName" placeholder="Full Name" />
+          </label>
+          <label>
+            <span>Your Email</span>
+            <input type="email" id="senderEmail" placeholder="email@example.com" />
+          </label>
+          <label>
+            <span>Your Phone</span>
+            <input type="tel" id="senderPhone" placeholder="(555) 123-4567" />
+          </label>
+        </div>
+
+        <button id="sendToRepBtn" class="btn-send" disabled>Send to Representative</button>
+        <div id="sendStatus" class="send-status hidden"></div>
+      </section>
     </main>
 
+    <script src="territories.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
