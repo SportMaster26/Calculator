@@ -57,9 +57,9 @@ const TERRITORIES = {
     "Guilford": { repName: "Amy Foster", repEmail: "afoster@example.com" }
   },
   "Ohio": {
-    "Cuyahoga": { repName: "Tom Harris", repEmail: "tharris@example.com" },
-    "Franklin": { repName: "Tom Harris", repEmail: "tharris@example.com" },
-    "Hamilton": { repName: "Tom Harris", repEmail: "tharris@example.com" }
+    "Cuyahoga": { repName: "Representative", repEmail: "ajolly@sportmaster.net" },
+    "Franklin": { repName: "Representative", repEmail: "ajolly@sportmaster.net" },
+    "Hamilton": { repName: "Representative", repEmail: "ajolly@sportmaster.net" }
   },
   "Pennsylvania": {
     "Philadelphia": { repName: "Robert Taylor", repEmail: "rtaylor@example.com" },
@@ -67,9 +67,9 @@ const TERRITORIES = {
     "Montgomery": { repName: "Robert Taylor", repEmail: "rtaylor@example.com" }
   },
   "Tennessee": {
-    "Shelby": { repName: "David Brown", repEmail: "dbrown@example.com" },
-    "Davidson": { repName: "David Brown", repEmail: "dbrown@example.com" },
-    "Knox": { repName: "David Brown", repEmail: "dbrown@example.com" }
+    "Shelby": { repName: "Representative", repEmail: "stockmaster@sportmaster.net" },
+    "Davidson": { repName: "Representative", repEmail: "stockmaster@sportmaster.net" },
+    "Knox": { repName: "Representative", repEmail: "stockmaster@sportmaster.net" }
   },
   "Texas": {
     "Harris": { repName: "Maria Garcia", repEmail: "mgarcia@example.com" },

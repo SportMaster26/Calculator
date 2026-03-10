@@ -1620,10 +1620,6 @@ function onStateChange() {
   countySelect.innerHTML = '<option value="">— Select County —</option>';
   countySelect.disabled = !state;
 
-  // Reset rep display
-  $('repInfoDisplay').classList.add('hidden');
-  $('repNameDisplay').textContent = '';
-
   if (state && TERRITORIES[state]) {
     const counties = Object.keys(TERRITORIES[state]).sort();
     counties.forEach(county => {
@@ -1638,20 +1634,6 @@ function onStateChange() {
 }
 
 function onCountyChange() {
-  const state = $('repState').value;
-  const county = $('repCounty').value;
-  const repDisplay = $('repInfoDisplay');
-  const repName = $('repNameDisplay');
-
-  if (state && county && TERRITORIES[state] && TERRITORIES[state][county]) {
-    const rep = TERRITORIES[state][county];
-    repName.textContent = rep.repName;
-    repDisplay.classList.remove('hidden');
-  } else {
-    repDisplay.classList.add('hidden');
-    repName.textContent = '';
-  }
-
   validateRepForm();
 }
 
@@ -1714,7 +1696,7 @@ function sendToRep() {
     total_area: totalArea,
     materials_html: sectionsHtml
   }, EMAILJS_PUBLIC_KEY).then(function() {
-    status.textContent = 'Materials list sent successfully to ' + rep.repName + '!';
+    status.textContent = 'Materials list sent successfully!';
     status.classList.remove('hidden', 'error');
     status.classList.add('success');
     btn.textContent = 'Send to Representative';
