@@ -1686,6 +1686,7 @@ function sendToRep() {
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
     to_email: rep.repEmail,
     rep_name: rep.repName,
+    reply_to: senderEmail,
     from_name: senderName,
     from_email: senderEmail,
     from_phone: senderPhone,
