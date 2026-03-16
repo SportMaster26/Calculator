@@ -78,7 +78,7 @@ const colorOptions = [
 
 // ── Color hex map for SVG previews ──
 const colorHexMap = {
-  'Not Selected': '#d5d5d5',
+  'Not Selected': '#f0f0f0',
   'Forest Green ColorPlus': '#48543A',
   'Light Green ColorPlus': '#445E34',
   'Dark Green ColorPlus': '#3B4133',
@@ -959,9 +959,9 @@ function renderCourtEntries() {
     const hiddenZones = getHiddenZoneIndices(entry.courtType, singleCourtSqFt);
 
     let zoneColorsHtml = def.zones.map((zone, i) => {
-      if (hiddenZones.includes(i)) return '';
-      const val = entry.zoneColors[i] || 'Not Selected';
-      return `<label>
+      const isHidden = hiddenZones.includes(i);
+      const val = isHidden ? 'Not Selected' : (entry.zoneColors[i] || 'Not Selected');
+      return `<label class="zone-color-label" data-zone-label="${i}" ${isHidden ? 'style="display:none"' : ''}>
         <span>${zone.name} Color</span>
         <select class="entry-zone-color" data-zone="${i}">${buildColorOptions(val)}</select>
       </label>`;
@@ -1078,17 +1078,22 @@ function renderCourtEntries() {
     }
 
     // Events: field changes → update preview + results
-    const prevHidden = getHiddenZoneIndices(entry.courtType, singleCourtSqFt);
     const onFieldChange = () => {
       readEntryFromDOM(entry);
-      // Check if hidden zones changed — if so, re-render entries to update color dropdowns
+      // Toggle zone color dropdowns visibility based on dimensions
       const newSqFt = getEntrySqFt(entry) / (entry.numCourts || 1);
       const newHidden = getHiddenZoneIndices(entry.courtType, newSqFt);
-      if (newHidden.length !== prevHidden.length || newHidden.some((v, i) => v !== prevHidden[i])) {
-        renderCourtEntries();
-        renderResults();
-        return;
-      }
+      card.querySelectorAll('.zone-color-label').forEach(label => {
+        const zi = parseInt(label.dataset.zoneLabel, 10);
+        const shouldHide = newHidden.includes(zi);
+        label.style.display = shouldHide ? 'none' : '';
+        if (shouldHide) {
+          // Set hidden zone color to faint grey for preview
+          entry.zoneColors[zi] = 'Not Selected';
+          const sel = label.querySelector('select');
+          if (sel) sel.value = 'Not Selected';
+        }
+      });
       // Update preview inline (fast)
       const previewDiv = card.querySelector('.preview-svg');
       const legendDiv = card.querySelector('.preview-legend');
