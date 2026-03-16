@@ -4,14 +4,15 @@
 *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #f0f4f8;
+  --bg: #f2f2f2;
   --card-bg: #ffffff;
-  --accent: #1a5276;
-  --accent-light: #2980b9;
-  --accent-pale: #d6eaf8;
-  --text: #2c3e50;
-  --text-muted: #5d6d7e;
-  --border: #d5dbdb;
+  --accent: #CC0000;
+  --accent-light: #E03030;
+  --accent-pale: #fce4e4;
+  --accent-dark: #1A1A1A;
+  --text: #1A1A1A;
+  --text-muted: #555555;
+  --border: #d5d5d5;
   --highlight: #fff9c4;
   --radius: 8px;
   --shadow: 0 2px 6px rgba(0,0,0,0.08);
@@ -35,9 +36,15 @@ header {
   text-align: center;
   margin-bottom: 24px;
 }
+.header-logo {
+  max-width: 360px;
+  height: auto;
+  margin: 0 auto 12px;
+  display: block;
+}
 header h1 {
   font-size: 1.75rem;
-  color: var(--accent);
+  color: var(--accent-dark);
 }
 header p {
   margin-top: 6px;
@@ -57,10 +64,10 @@ header p {
 }
 .card h2 {
   font-size: 1.1rem;
-  color: var(--accent);
+  color: var(--accent-dark);
   margin-bottom: 12px;
   padding-bottom: 6px;
-  border-bottom: 2px solid var(--accent-pale);
+  border-bottom: 2px solid var(--accent);
 }
 .step-hint {
   font-size: 0.82rem;
@@ -114,20 +121,20 @@ input[type="tel"] {
   transition: border-color 0.15s;
 }
 input[readonly] {
-  background: var(--accent-pale);
+  background: #f5f5f5;
   font-weight: 600;
   cursor: default;
 }
 select:disabled {
-  background: var(--accent-pale);
+  background: #f5f5f5;
   cursor: default;
   opacity: 0.8;
 }
 select:focus,
 input:focus {
   outline: none;
-  border-color: var(--accent-light);
-  box-shadow: 0 0 0 2px var(--accent-pale);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(204, 0, 0, 0.15);
 }
 .input-highlight {
   background: var(--highlight);
@@ -141,7 +148,7 @@ input:focus {
   gap: 12px;
 }
 .summary-item {
-  background: var(--accent-pale);
+  background: #f9f9f9;
   border-left: 4px solid var(--accent);
   border-radius: 0 var(--radius) var(--radius) 0;
   padding: 10px 14px;
@@ -169,7 +176,7 @@ table {
   font-size: 0.88rem;
 }
 thead th {
-  background: var(--accent);
+  background: var(--accent-dark);
   color: #fff;
   padding: 8px 10px;
   text-align: left;
@@ -186,27 +193,27 @@ tbody tr:hover {
   background: #f7f9fb;
 }
 .zone-header td {
-  background: var(--accent-pale);
+  background: #fce4e4;
   font-weight: 700;
   color: var(--accent);
   padding: 8px 10px;
-  border-bottom: 2px solid var(--accent-light);
+  border-bottom: 2px solid var(--accent);
 }
 .zone-subheader td {
-  background: #eef4fa;
+  background: #f5f5f5;
   font-weight: 600;
   color: var(--text);
   padding: 6px 10px 6px 20px;
-  border-bottom: 1px solid var(--accent-pale);
+  border-bottom: 1px solid #e0e0e0;
   font-size: 0.84rem;
 }
 .total-packaging-header td {
-  background: #1a5276;
+  background: var(--accent-dark);
   color: #fff;
   font-weight: 700;
   padding: 8px 10px;
   font-size: 0.84rem;
-  border-bottom: 2px solid var(--accent-light);
+  border-bottom: 2px solid var(--accent);
 }
 
 /* ── Court Entry Cards ── */
@@ -225,7 +232,7 @@ tbody tr:hover {
 }
 .entry-header h3 {
   font-size: 1rem;
-  color: var(--accent);
+  color: var(--accent-dark);
   margin: 0;
 }
 .entry-body {
@@ -291,9 +298,9 @@ tbody tr:hover {
   width: 100%;
   padding: 10px;
   margin-top: 8px;
-  background: var(--accent-pale);
+  background: #fce4e4;
   color: var(--accent);
-  border: 2px dashed var(--accent-light);
+  border: 2px dashed var(--accent);
   border-radius: var(--radius);
   font-size: 0.95rem;
   font-weight: 600;
@@ -301,8 +308,8 @@ tbody tr:hover {
   transition: background 0.15s, border-color 0.15s;
 }
 .btn-add:hover {
-  background: #bdd8ed;
-  border-color: var(--accent);
+  background: #f5c6c6;
+  border-color: #990000;
 }
 .btn-remove {
   padding: 4px 12px;
@@ -324,7 +331,7 @@ tbody tr:hover {
   display: block;
   width: 100%;
   padding: 14px;
-  background: var(--accent);
+  background: var(--accent-dark);
   color: #fff;
   border: none;
   border-radius: var(--radius);
@@ -335,7 +342,7 @@ tbody tr:hover {
   letter-spacing: 0.02em;
 }
 .btn-print:hover {
-  background: var(--accent-light);
+  background: #333333;
 }
 
 /* ── Send to Rep Button ── */
@@ -344,7 +351,7 @@ tbody tr:hover {
   width: 100%;
   padding: 14px;
   margin-top: 14px;
-  background: #27ae60;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: var(--radius);
@@ -355,10 +362,10 @@ tbody tr:hover {
   letter-spacing: 0.02em;
 }
 .btn-send:hover:not(:disabled) {
-  background: #2ecc71;
+  background: #E03030;
 }
 .btn-send:disabled {
-  background: #95a5a6;
+  background: #999999;
   cursor: not-allowed;
 }
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 100" width="520" height="100">
+  <style>
+    .sport { font-family: 'Arial Black', 'Impact', sans-serif; font-size: 58px; font-weight: 900; font-style: italic; fill: #CC0000; }
+    .master { font-family: 'Arial Black', 'Impact', sans-serif; font-size: 58px; font-weight: 900; font-style: italic; fill: #1A1A1A; }
+    .reg { font-family: Arial, sans-serif; font-size: 18px; fill: #1A1A1A; }
+    .subtitle { font-family: Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #1A1A1A; letter-spacing: 1px; }
+    .division { font-family: Arial, sans-serif; font-size: 10px; fill: #1A1A1A; letter-spacing: 3px; }
+  </style>
+  <text x="10" y="52" class="sport">Sport</text>
+  <text x="210" y="52" class="master">Master</text>
+  <text x="430" y="28" class="reg">&reg;</text>
+  <text x="225" y="76" class="subtitle">SPORT SURFACES</text>
+  <text x="230" y="95" class="division">DIVISION OF THORWORKS INC.</text>
+</svg>
