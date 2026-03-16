@@ -379,10 +379,28 @@ function getColorPlusItemNumber(colorName, isJar) {
 }
 
 // ── Compute zone areas ──
-function computeZoneAreas(courtType, totalSqFt, numCourts) {
+// Determine which zone indices should be hidden based on court type and per-court area
+function getHiddenZoneIndices(courtType, singleCourtSqFt) {
+  const hidden = [];
   const def = courtDefs[courtType];
+  if (courtType === 'pickleball' && singleCourtSqFt <= 880) {
+    // Hide "Total Area" zone when pickleball court is 20x44 or smaller
+    def.zones.forEach((z, i) => { if (z.name === 'Total Area') hidden.push(i); });
+  }
+  if (courtType === 'tennis' && singleCourtSqFt >= 2808) {
+    // Hide "Outside Area" zone when tennis court is 36x78 or larger
+    def.zones.forEach((z, i) => { if (z.name === 'Outside Area') hidden.push(i); });
+  }
+  return hidden;
+}
+
+function computeZoneAreas(courtType, totalSqFt, numCourts, singleCourtSqFt) {
+  const def = courtDefs[courtType];
+  const hidden = getHiddenZoneIndices(courtType, singleCourtSqFt || (totalSqFt / (numCourts || 1)));
   const zones = [];
-  for (const zone of def.zones) {
+  for (let i = 0; i < def.zones.length; i++) {
+    if (hidden.includes(i)) continue;
+    const zone = def.zones[i];
     let areaSqFt;
     if (zone.sqftPerCourt !== null) {
       areaSqFt = Math.ceil(zone.sqftPerCourt * numCourts);
@@ -400,7 +418,7 @@ function computeZoneAreas(courtType, totalSqFt, numCourts) {
         areaSqFt = totalSqFt;
       }
     }
-    zones.push({ name: zone.name, sqft: areaSqFt, sqyd: areaSqFt / SQFT_PER_SQYD });
+    zones.push({ name: zone.name, sqft: areaSqFt, sqyd: areaSqFt / SQFT_PER_SQYD, zoneIndex: i });
   }
   return zones;
 }
@@ -410,13 +428,15 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
   const totalSqFt = getEntrySqFt(entry);
   const totalSqYd = totalSqFt / SQFT_PER_SQYD;
   const pkgSize = getPackageSize(packaging);
-  const zoneAreas = computeZoneAreas(entry.courtType, totalSqFt, entry.numCourts);
+  const singleCourtSqFt = totalSqFt / (entry.numCourts || 1);
+  const zoneAreas = computeZoneAreas(entry.courtType, totalSqFt, entry.numCourts, singleCourtSqFt);
 
   // ── First pass: compute raw gallons per zone per product and aggregate totals ──
   const zoneRawData = [];
   const productTotalGallons = {}; // prodName → total gallons across all zones
 
-  zoneAreas.forEach((zone, zi) => {
+  zoneAreas.forEach((zone) => {
+    const zi = zone.zoneIndex;
     if (zone.sqft <= 0) return;
     const colorName = entry.zoneColors[zi] || 'Not Selected';
     const prods = mixType === 'ready'
@@ -931,7 +951,12 @@ function renderCourtEntries() {
 
     const showCourtsField = entry.courtType !== 'totalArea';
 
+    const entrySqFt = getEntrySqFt(entry);
+    const singleCourtSqFt = entrySqFt / (entry.numCourts || 1);
+    const hiddenZones = getHiddenZoneIndices(entry.courtType, singleCourtSqFt);
+
     let zoneColorsHtml = def.zones.map((zone, i) => {
+      if (hiddenZones.includes(i)) return '';
       const val = entry.zoneColors[i] || 'Not Selected';
       return `<label>
         <span>${zone.name} Color</span>
