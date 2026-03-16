@@ -388,7 +388,7 @@ function getHiddenZoneIndices(courtType, singleCourtSqFt) {
     def.zones.forEach((z, i) => { if (z.name === 'Total Area') hidden.push(i); });
   }
   if (courtType === 'tennis' && singleCourtSqFt <= 2808) {
-    // Hide "Outside Area" zone when tennis court is 36x78 or smaller (no border)
+    // Hide "Outside Area" when court has no space beyond the 2808 sq ft playing area
     def.zones.forEach((z, i) => { if (z.name === 'Outside Area') hidden.push(i); });
   }
   return hidden;
@@ -1078,8 +1078,17 @@ function renderCourtEntries() {
     }
 
     // Events: field changes → update preview + results
+    const prevHidden = getHiddenZoneIndices(entry.courtType, singleCourtSqFt);
     const onFieldChange = () => {
       readEntryFromDOM(entry);
+      // Check if hidden zones changed — if so, re-render entries to update color dropdowns
+      const newSqFt = getEntrySqFt(entry) / (entry.numCourts || 1);
+      const newHidden = getHiddenZoneIndices(entry.courtType, newSqFt);
+      if (newHidden.length !== prevHidden.length || newHidden.some((v, i) => v !== prevHidden[i])) {
+        renderCourtEntries();
+        renderResults();
+        return;
+      }
       // Update preview inline (fast)
       const previewDiv = card.querySelector('.preview-svg');
       const legendDiv = card.querySelector('.preview-legend');
