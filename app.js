@@ -387,8 +387,8 @@ function getHiddenZoneIndices(courtType, singleCourtSqFt) {
     // Hide "Total Area" zone when pickleball court is 20x44 or smaller
     def.zones.forEach((z, i) => { if (z.name === 'Total Area') hidden.push(i); });
   }
-  if (courtType === 'tennis' && singleCourtSqFt <= 2808) {
-    // Hide "Outside Area" zone when tennis court is 36x78 or smaller (no border)
+  if (courtType === 'tennis' && singleCourtSqFt >= 2808) {
+    // Hide "Outside Area" zone when tennis court is 36x78 or larger
     def.zones.forEach((z, i) => { if (z.name === 'Outside Area') hidden.push(i); });
   }
   return hidden;
