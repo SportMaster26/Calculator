@@ -1078,8 +1078,17 @@ function renderCourtEntries() {
     }
 
     // Events: field changes → update preview + results
+    const prevHidden = getHiddenZoneIndices(entry.courtType, singleCourtSqFt);
     const onFieldChange = () => {
       readEntryFromDOM(entry);
+      // Check if hidden zones changed — if so, re-render entries to update color dropdowns
+      const newSqFt = getEntrySqFt(entry) / (entry.numCourts || 1);
+      const newHidden = getHiddenZoneIndices(entry.courtType, newSqFt);
+      if (newHidden.length !== prevHidden.length || newHidden.some((v, i) => v !== prevHidden[i])) {
+        renderCourtEntries();
+        renderResults();
+        return;
+      }
       // Update preview inline (fast)
       const previewDiv = card.querySelector('.preview-svg');
       const legendDiv = card.querySelector('.preview-legend');
