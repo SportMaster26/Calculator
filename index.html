@@ -3,19 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#CC0000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SportMaster Calc" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="manifest" href="manifest.json" />
     <title>SportMaster Product Calculator</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="container">
       <header>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 100" class="header-logo" role="img" aria-label="SportMaster Sport Surfaces">
-          <text x="10" y="52" style="font-family:'Arial Black',Impact,sans-serif;font-size:58px;font-weight:900;font-style:italic;fill:#CC0000;">Sport</text>
-          <text x="210" y="52" style="font-family:'Arial Black',Impact,sans-serif;font-size:58px;font-weight:900;font-style:italic;fill:#1A1A1A;">Master</text>
-          <text x="430" y="28" style="font-family:Arial,sans-serif;font-size:18px;fill:#1A1A1A;">&#174;</text>
-          <text x="225" y="76" style="font-family:Arial,sans-serif;font-size:18px;font-weight:700;fill:#1A1A1A;letter-spacing:1px;">SPORT SURFACES</text>
-          <text x="230" y="95" style="font-family:Arial,sans-serif;font-size:10px;fill:#1A1A1A;letter-spacing:3px;">DIVISION OF THORWORKS INC.</text>
-        </svg>
+        <img src="spm-logo-bannercopy.png" alt="SportMaster Sport Surfaces" class="header-logo" />
         <h1>Product Calculator</h1>
         <p id="noteText"></p>
       </header>
@@ -165,5 +165,10 @@
     <script src="territories.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js');
+      }
+    </script>
   </body>
 </html>
