@@ -2,8 +2,6 @@
 <div id="sportmaster-calculator-wrap" class="smc-wrap">
   <div class="container">
     <header>
-      <img src="<?php echo esc_url( plugin_dir_url( __DIR__ ) . 'assets/images/spm-logo-bannercopy.png' ); ?>" alt="SportMaster Sport Surfaces" class="header-logo" />
-      <h1>Product Calculator</h1>
       <p id="noteText"></p>
     </header>
 
