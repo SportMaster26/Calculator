@@ -1214,7 +1214,7 @@ function renderResults() {
   entryResults.forEach((r, ri) => {
     const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
     r.zoneAreas.forEach(z => {
-      zoneAreaHtml += `<tr><td>${courtLabel}</td><td>${z.name}</td><td>${fmt(z.sqft)}</td><td>${fmt(z.sqyd)}</td></tr>`;
+      zoneAreaHtml += `<tr><td data-label="Court">${courtLabel}</td><td data-label="Zone">${z.name}</td><td data-label="Square Feet">${fmt(z.sqft)}</td><td data-label="Square Yards">${fmt(z.sqyd)}</td></tr>`;
     });
   });
   $('zoneAreasBody').innerHTML = zoneAreaHtml || '<tr><td colspan="4">Add courts above</td></tr>';
@@ -1226,7 +1226,7 @@ function renderResults() {
       totalAreaHtml += `<tr class="zone-header"><td colspan="5">${g.label}</td></tr>`;
     }
     for (const r of g.items) {
-      totalAreaHtml += `<tr><td>${r.product}</td><td>${r.coats}</td><td>${r.gallons}</td><td>${r.packaging}</td><td>${r.item}</td></tr>`;
+      totalAreaHtml += `<tr><td data-label="Material">${r.product}</td><td data-label="Coats">${r.coats}</td><td data-label="Gallons">${r.gallons}</td><td data-label="Packaging">${r.packaging}</td><td data-label="Item #">${r.item}</td></tr>`;
     }
   });
   $('totalAreaBody').innerHTML = totalAreaHtml;
@@ -1244,7 +1244,7 @@ function renderResults() {
       const zoneColorLabel = zone.colorName && zone.colorName !== 'Not Selected' ? ` — ${zone.colorName}` : '';
       zoneHtml += `<tr class="zone-subheader"><td colspan="5"><span class="legend-swatch" style="background:${zoneColorHex};vertical-align:middle;margin-right:6px"></span>${zone.name} (${fmt(zone.sqft)} sq ft)${zoneColorLabel}</td></tr>`;
       for (const p of zone.products) {
-        zoneHtml += `<tr><td>${p.product}</td><td>${p.coats}</td><td>${typeof p.gallons === 'number' ? fmt(p.gallons) : p.gallons}</td><td>${p.packaging}</td><td>${p.item}</td></tr>`;
+        zoneHtml += `<tr><td data-label="Material">${p.product}</td><td data-label="Coats">${p.coats}</td><td data-label="Gallons">${typeof p.gallons === 'number' ? fmt(p.gallons) : p.gallons}</td><td data-label="Packaging">${p.packaging}</td><td data-label="Item #">${p.item}</td></tr>`;
       }
     }
   });
@@ -1261,7 +1261,7 @@ function renderResults() {
     if (selected) {
       cushionHtml += `<tr class="zone-header"><td colspan="5">${g.label} — ${selectedLabel}</td></tr>`;
       for (const item of selected.items) {
-        cushionHtml += `<tr><td>${item.product}</td><td>${item.coats}</td><td>${item.gallons}</td><td>${item.packaging}</td><td>${item.item}</td></tr>`;
+        cushionHtml += `<tr><td data-label="Material">${item.product}</td><td data-label="Coats">${item.coats}</td><td data-label="Gallons">${item.gallons}</td><td data-label="Packaging">${item.packaging}</td><td data-label="Item #">${item.item}</td></tr>`;
       }
     }
   });
@@ -1277,7 +1277,7 @@ function renderResults() {
     const courtLabel = entryResults.length > 1 ? (r.label + ' (Court ' + (ri + 1) + ')') : r.label;
     stripingHtml += `<tr class="zone-header"><td colspan="4">${courtLabel}</td></tr>`;
     for (const s of r.striping) {
-      stripingHtml += `<tr><td>${s.product}</td><td>${s.gallons}</td><td>${s.packaging}</td><td>${s.item}</td></tr>`;
+      stripingHtml += `<tr><td data-label="Material">${s.product}</td><td data-label="Gallons">${s.gallons}</td><td data-label="Packaging">${s.packaging}</td><td data-label="Item #">${s.item}</td></tr>`;
     }
   });
   if (anyStriping) {

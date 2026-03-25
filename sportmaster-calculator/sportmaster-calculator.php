@@ -3,7 +3,7 @@
  * Plugin Name: SportMaster Product Calculator
  * Plugin URI:  https://sportmastersurfaces.com
  * Description: Court surfacing materials calculator. Use the [sportmaster_calculator] shortcode on any page.
- * Version:     1.0.6
+ * Version:     1.0.7
  * Author:      SportMaster Sport Surfaces
  * License:     GPL-2.0-or-later
  * Text Domain: sportmaster-calculator
@@ -32,7 +32,7 @@ function sportmaster_calculator_enqueue() {
         'sportmaster-calculator',
         $plugin_url . 'assets/css/sportmaster-calculator.css',
         array(),
-        '1.0.6'
+        '1.0.7'
     );
 
     wp_enqueue_script(
@@ -55,7 +55,7 @@ function sportmaster_calculator_enqueue() {
         'sportmaster-app',
         $plugin_url . 'assets/js/app.js',
         array( 'emailjs-sdk', 'sportmaster-territories' ),
-        '1.0.6',
+        '1.0.7',
         true
     );
 

@@ -408,6 +408,16 @@
 
 /* ── Responsive ── */
 @media (max-width: 700px) {
+  .smc-wrap .container {
+    padding: 8px 4px 32px;
+    max-width: 100%;
+  }
+  .smc-wrap .card {
+    padding: 12px 8px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+    overflow-x: visible;
+  }
   .smc-wrap .entry-body {
     grid-template-columns: 1fr;
   }
@@ -416,6 +426,53 @@
   }
   .smc-wrap .form-row { grid-template-columns: 1fr; }
   .smc-wrap .summary-grid { grid-template-columns: 1fr 1fr; }
-  .smc-wrap table { font-size: 0.8rem; }
-  .smc-wrap thead th, .smc-wrap tbody td { padding: 6px 6px; }
+
+  /* Tables: stack cells vertically so no side scroll */
+  .smc-wrap table,
+  .smc-wrap thead,
+  .smc-wrap tbody,
+  .smc-wrap th,
+  .smc-wrap td,
+  .smc-wrap tr {
+    display: block;
+    width: 100%;
+  }
+  .smc-wrap thead {
+    display: none;
+  }
+  .smc-wrap tbody tr {
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+  }
+  .smc-wrap tbody td {
+    padding: 4px 0;
+    border-bottom: none;
+    font-size: 0.82rem;
+    text-align: left;
+  }
+  .smc-wrap tbody td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: var(--accent-dark);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+  /* Zone headers stay full-width blocks */
+  .smc-wrap .zone-header td,
+  .smc-wrap .zone-subheader td {
+    padding: 8px;
+  }
+  .smc-wrap .zone-header,
+  .smc-wrap .zone-subheader {
+    border: none;
+    margin-bottom: 4px;
+    padding: 0;
+  }
+  .smc-wrap .total-packaging-header td {
+    padding: 8px;
+  }
 }
