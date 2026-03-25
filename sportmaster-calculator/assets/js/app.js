@@ -1703,7 +1703,7 @@ function sendToRep() {
 
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
     to_email: 'ajolly@sportmaster.net',
-    rep_name: 'SportMaster Representative',
+    rep_name: 'SportMaster Calc Lead',
     reply_to: senderEmail,
     from_name: senderName,
     from_email: senderEmail,
