@@ -1664,8 +1664,7 @@ function validateRepForm() {
   const email = $('senderEmail').value.trim();
   const phone = $('senderPhone').value.trim();
 
-  const valid = city && state && name && email && phone
-    && TERRITORIES[state];
+  const valid = city && state && name && email && phone;
 
   $('sendToRepBtn').disabled = !valid;
   return valid;
@@ -1676,9 +1675,6 @@ function sendToRep() {
 
   const city = $('repCity').value.trim();
   const state = $('repState').value;
-  // Look up rep from the first county entry for this state
-  const counties = Object.keys(TERRITORIES[state]);
-  const rep = TERRITORIES[state][counties[0]];
   const senderName = $('senderName').value.trim();
   const senderEmail = $('senderEmail').value.trim();
   const senderPhone = $('senderPhone').value.trim();
@@ -1706,8 +1702,8 @@ function sendToRep() {
   }
 
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-    to_email: rep.repEmail,
-    rep_name: rep.repName,
+    to_email: 'ajolly@sportmaster.net',
+    rep_name: 'SportMaster Representative',
     reply_to: senderEmail,
     from_name: senderName,
     from_email: senderEmail,
