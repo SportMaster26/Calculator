@@ -177,8 +177,8 @@
   font-size: 0.88rem;
 }
 .smc-wrap thead th {
-  background: var(--accent-dark);
-  color: #fff;
+  background: #C2D92E;
+  color: #ffffff;
   padding: 8px 10px;
   text-align: left;
   font-weight: 600;
@@ -209,8 +209,8 @@
   font-size: 0.84rem;
 }
 .smc-wrap .total-packaging-header td {
-  background: var(--accent-dark);
-  color: #fff;
+  background: #C2D92E;
+  color: #ffffff;
   font-weight: 700;
   padding: 8px 10px;
   font-size: 0.84rem;
