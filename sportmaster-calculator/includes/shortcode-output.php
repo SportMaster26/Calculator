@@ -114,15 +114,13 @@
 
       <div class="form-row">
         <label>
+          <span>City</span>
+          <input type="text" id="repCity" placeholder="City" />
+        </label>
+        <label>
           <span>State</span>
           <select id="repState">
             <option value="">— Select State —</option>
-          </select>
-        </label>
-        <label>
-          <span>County</span>
-          <select id="repCounty" disabled>
-            <option value="">— Select County —</option>
           </select>
         </label>
       </div>

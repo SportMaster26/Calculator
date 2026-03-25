@@ -1649,48 +1649,23 @@ function initRepDropdowns() {
     stateSelect.appendChild(opt);
   });
 
-  stateSelect.addEventListener('change', onStateChange);
-  $('repCounty').addEventListener('change', onCountyChange);
+  stateSelect.addEventListener('change', validateRepForm);
+  $('repCity').addEventListener('input', validateRepForm);
   $('senderName').addEventListener('input', validateRepForm);
   $('senderEmail').addEventListener('input', validateRepForm);
   $('senderPhone').addEventListener('input', validateRepForm);
   $('sendToRepBtn').addEventListener('click', sendToRep);
 }
 
-function onStateChange() {
-  const state = $('repState').value;
-  const countySelect = $('repCounty');
-
-  // Reset county
-  countySelect.innerHTML = '<option value="">— Select County —</option>';
-  countySelect.disabled = !state;
-
-  if (state && TERRITORIES[state]) {
-    const counties = Object.keys(TERRITORIES[state]).sort();
-    counties.forEach(county => {
-      const opt = document.createElement('option');
-      opt.value = county;
-      opt.textContent = county;
-      countySelect.appendChild(opt);
-    });
-  }
-
-  validateRepForm();
-}
-
-function onCountyChange() {
-  validateRepForm();
-}
-
 function validateRepForm() {
+  const city = $('repCity').value.trim();
   const state = $('repState').value;
-  const county = $('repCounty').value;
   const name = $('senderName').value.trim();
   const email = $('senderEmail').value.trim();
   const phone = $('senderPhone').value.trim();
 
-  const valid = state && county && name && email && phone
-    && TERRITORIES[state] && TERRITORIES[state][county];
+  const valid = city && state && name && email && phone
+    && TERRITORIES[state];
 
   $('sendToRepBtn').disabled = !valid;
   return valid;
@@ -1699,9 +1674,11 @@ function validateRepForm() {
 function sendToRep() {
   if (!validateRepForm()) return;
 
+  const city = $('repCity').value.trim();
   const state = $('repState').value;
-  const county = $('repCounty').value;
-  const rep = TERRITORIES[state][county];
+  // Look up rep from the first county entry for this state
+  const counties = Object.keys(TERRITORIES[state]);
+  const rep = TERRITORIES[state][counties[0]];
   const senderName = $('senderName').value.trim();
   const senderEmail = $('senderEmail').value.trim();
   const senderPhone = $('senderPhone').value.trim();
@@ -1736,7 +1713,7 @@ function sendToRep() {
     from_email: senderEmail,
     from_phone: senderPhone,
     state: state,
-    county: county,
+    city: city,
     court_summary: courtSummary,
     surface: surfaceLabel,
     total_area: totalArea,
