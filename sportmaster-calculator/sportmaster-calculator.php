@@ -18,7 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function sportmaster_calculator_enqueue() {
     global $post;
-    if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'sportmaster_calculator' ) ) {
+    if ( ! is_a( $post, 'WP_Post' ) ) {
+        return;
+    }
+    if ( ! has_shortcode( $post->post_content, 'sportmaster_calculator' )
+      && ! has_shortcode( $post->post_content, 'sportmaster-calculator' ) ) {
         return;
     }
 
@@ -71,3 +75,4 @@ function sportmaster_calculator_shortcode( $atts ) {
     return ob_get_clean();
 }
 add_shortcode( 'sportmaster_calculator', 'sportmaster_calculator_shortcode' );
+add_shortcode( 'sportmaster-calculator', 'sportmaster_calculator_shortcode' );
