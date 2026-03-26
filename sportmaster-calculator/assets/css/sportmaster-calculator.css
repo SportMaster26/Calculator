@@ -8,6 +8,7 @@
 .smc-wrap *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 .smc-wrap {
+  width: 100%;
   --bg: #f2f2f2;
   --card-bg: #ffffff;
   --accent: #6FAED6;
@@ -27,9 +28,11 @@
 }
 
 .smc-wrap .container {
+  width: 100%;
   max-width: 100%;
-  margin: 0 auto;
+  margin: 0;
   padding: 24px 16px 48px;
+  box-sizing: border-box;
 }
 
 /* ── Header ── */
