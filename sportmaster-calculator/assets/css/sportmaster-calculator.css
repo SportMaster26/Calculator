@@ -143,6 +143,10 @@
 .smc-wrap .input-highlight {
   background: var(--highlight);
 }
+.smc-wrap .entry-dimensions-row label > span {
+  font-weight: 700;
+  color: var(--accent-dark);
+}
 .smc-wrap .hidden { display: none !important; }
 
 /* ── Summary Grid ── */
@@ -463,7 +467,7 @@
 
   /* Smaller form controls */
   .smc-wrap .form-row { grid-template-columns: 1fr 1fr; gap: 6px; }
-  .smc-wrap .entry-dimensions-row { grid-template-columns: 1fr 1fr; }
+  .smc-wrap .entry-dimensions-row { grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
   .smc-wrap select,
   .smc-wrap input[type="number"],
   .smc-wrap input[type="text"],
