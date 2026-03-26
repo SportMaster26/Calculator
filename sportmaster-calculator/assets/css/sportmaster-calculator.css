@@ -187,15 +187,15 @@
 .smc-wrap thead th {
   background: #C2D92E;
   color: #2D4157;
-  padding: 8px 10px;
+  padding: 6px 6px;
   text-align: left;
   font-weight: 600;
   font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 .smc-wrap tbody td {
-  padding: 7px 10px;
+  padding: 5px 6px;
   border-bottom: 1px solid var(--border);
 }
 .smc-wrap tbody tr:hover {
@@ -514,12 +514,13 @@
     white-space: nowrap;
   }
   .smc-wrap thead th {
-    padding: 4px 2px;
+    padding: 3px 1px;
     font-size: clamp(0.45rem, 2vw, 0.65rem);
     white-space: nowrap;
+    letter-spacing: 0;
   }
   .smc-wrap tbody td {
-    padding: 3px 2px;
+    padding: 2px 1px;
     white-space: nowrap;
   }
   .smc-wrap .zone-header td,
