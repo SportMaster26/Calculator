@@ -1583,20 +1583,21 @@ function printMaterialsList() {
   <meta charset="UTF-8">
   <title>SportMaster Materials List</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #2c3e50; padding: 32px; }
-    h1 { font-size: 1.4rem; color: #1a5276; margin-bottom: 4px; }
-    h2 { font-size: 1.1rem; color: #1a5276; margin-top: 28px; margin-bottom: 4px; }
-    .subtitle { font-size: 0.9rem; color: #5d6d7e; margin-bottom: 20px; }
-    .summary { font-size: 0.85rem; color: #2c3e50; margin-bottom: 16px; }
-    .summary strong { color: #1a5276; }
+    @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@400;600;700&display=swap');
+    body { font-family: 'Catamaran', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1A1A1A; padding: 32px; }
+    h1 { font-size: 1.4rem; color: #2D4157; margin-bottom: 4px; }
+    h2 { font-size: 1.1rem; color: #2D4157; margin-top: 28px; margin-bottom: 4px; border-bottom: 2px solid #6FAED6; padding-bottom: 4px; }
+    .subtitle { font-size: 0.9rem; color: #555555; margin-bottom: 20px; }
+    .summary { font-size: 0.85rem; color: #1A1A1A; margin-bottom: 16px; }
+    .summary strong { color: #2D4157; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 12px; }
-    th { background: #1a5276; color: #fff; padding: 8px 10px; text-align: left; font-size: 0.78rem; text-transform: uppercase; }
-    td { padding: 7px 10px; border-bottom: 1px solid #d5dbdb; }
+    th { background: #C2D92E; color: #2D4157; padding: 8px 10px; text-align: left; font-size: 0.78rem; text-transform: uppercase; font-weight: 600; }
+    td { padding: 7px 10px; border-bottom: 1px solid #d5d5d5; }
     tr:nth-child(even) { background: #f7f9fb; }
-    .zone-header td { background: #d6eaf8; font-weight: 700; color: #1a5276; padding: 8px 10px; border-bottom: 2px solid #2980b9; }
-    .zone-subheader td { background: #eef4fa; font-weight: 600; color: #2c3e50; padding: 6px 10px 6px 20px; border-bottom: 1px solid #d6eaf8; font-size: 0.84rem; }
+    .zone-header td { background: #e8f2fa; font-weight: 700; color: #2D4157; padding: 8px 10px; border-bottom: 2px solid #6FAED6; }
+    .zone-subheader td { background: #f5f5f5; font-weight: 600; color: #1A1A1A; padding: 6px 10px 6px 20px; border-bottom: 1px solid #e0e0e0; font-size: 0.84rem; }
     .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.15); vertical-align: middle; margin-right: 6px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .footer { margin-top: 24px; font-size: 0.75rem; color: #5d6d7e; border-top: 1px solid #d5dbdb; padding-top: 12px; }
+    .footer { margin-top: 24px; font-size: 0.75rem; color: #555555; border-top: 2px solid #6FAED6; padding-top: 12px; }
     @media print {
       body { padding: 16px; }
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
