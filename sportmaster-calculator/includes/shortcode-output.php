@@ -40,7 +40,7 @@
       <h2>Zone Area Breakdown</h2>
       <table>
         <thead>
-          <tr><th>Court</th><th>Zone</th><th>Square Feet</th><th>Square Yards</th></tr>
+          <tr><th>Court</th><th>Zone</th><th>Square<br>Feet</th><th>Square<br>Yards</th></tr>
         </thead>
         <tbody id="zoneAreasBody"></tbody>
       </table>
@@ -52,7 +52,7 @@
       <p class="disclaimer">These coverage rates may vary depending on width as well as depth of the cracks.</p>
       <table>
         <thead>
-          <tr><th></th><th>Court</th><th>Product</th><th>Linear Ft / Gallon</th><th>Recommended Width</th><th>Gallons Needed (Est.)</th><th>Packaging</th><th>Item Number</th></tr>
+          <tr><th></th><th>Court</th><th>Product</th><th>Linear Ft /<br>Gallon</th><th>Recommended<br>Width</th><th>Gallons<br>Needed (Est.)</th><th>Packaging</th><th>Item<br>Number</th></tr>
         </thead>
         <tbody id="crackBody"></tbody>
       </table>
@@ -63,7 +63,7 @@
       <h2>Total Area Materials (Resurfacer)</h2>
       <table>
         <thead>
-          <tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
+          <tr><th>Material</th><th>Coats</th><th>Gallons<br>Needed</th><th>Packaging</th><th>Item<br>Number</th></tr>
         </thead>
         <tbody id="totalAreaBody"></tbody>
       </table>
@@ -74,7 +74,7 @@
       <h2>Court Zone Product Options</h2>
       <table>
         <thead>
-          <tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
+          <tr><th>Material</th><th>Coats</th><th>Gallons<br>Needed</th><th>Packaging</th><th>Item<br>Number</th></tr>
         </thead>
         <tbody id="zoneProductsBody"></tbody>
       </table>
@@ -85,7 +85,7 @@
       <h2>ProCushion Layers</h2>
       <table>
         <thead>
-          <tr><th>Material</th><th>Coats</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
+          <tr><th>Material</th><th>Coats</th><th>Gallons<br>Needed</th><th>Packaging</th><th>Item<br>Number</th></tr>
         </thead>
         <tbody id="cushionBody"></tbody>
       </table>
@@ -96,7 +96,7 @@
       <h2>Striping</h2>
       <table>
         <thead>
-          <tr><th>Material</th><th>Gallons Needed</th><th>Packaging</th><th>Item Number</th></tr>
+          <tr><th>Material</th><th>Gallons<br>Needed</th><th>Packaging</th><th>Item<br>Number</th></tr>
         </thead>
         <tbody id="stripingBody"></tbody>
       </table>

@@ -182,6 +182,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
+  table-layout: auto;
 }
 .smc-wrap thead th {
   background: #C2D92E;
