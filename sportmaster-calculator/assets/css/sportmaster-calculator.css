@@ -259,7 +259,12 @@
   min-width: 0;
 }
 .smc-wrap .entry-dimensions-row {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 2fr 1fr 1fr;
+  min-width: 0;
+}
+.smc-wrap .entry-dimensions-row .entry-width,
+.smc-wrap .entry-dimensions-row .entry-length {
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -467,7 +472,14 @@
 
   /* Smaller form controls */
   .smc-wrap .form-row { grid-template-columns: 1fr 1fr; gap: 6px; }
-  .smc-wrap .entry-dimensions-row { grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .smc-wrap .entry-dimensions-row { grid-template-columns: 2fr 1fr 1fr; gap: 4px; }
+  .smc-wrap .entry-dimensions-row .entry-width,
+  .smc-wrap .entry-dimensions-row .entry-length {
+    width: 100%;
+    min-width: 0;
+    padding: 5px 2px;
+    font-size: 0.72rem;
+  }
   .smc-wrap select,
   .smc-wrap input[type="number"],
   .smc-wrap input[type="text"],
