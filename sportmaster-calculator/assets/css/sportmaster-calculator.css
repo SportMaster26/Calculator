@@ -506,27 +506,32 @@
   .smc-wrap .summary-item .label { font-size: 0.6rem; }
   .smc-wrap .summary-item .value { font-size: 0.9rem; }
 
-  /* Tables: keep horizontal layout, scale text to fit */
+  /* Tables: force fit within screen width */
   .smc-wrap table {
-    font-size: clamp(0.5rem, 2.2vw, 0.75rem);
-    table-layout: auto;
+    font-size: clamp(0.48rem, 1.8vw, 0.7rem);
+    table-layout: fixed;
     width: 100%;
-    white-space: nowrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
   .smc-wrap thead th {
     padding: 3px 1px;
-    font-size: clamp(0.45rem, 2vw, 0.65rem);
-    white-space: nowrap;
+    font-size: clamp(0.42rem, 1.6vw, 0.6rem);
     letter-spacing: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
   }
   .smc-wrap tbody td {
     padding: 2px 1px;
-    white-space: nowrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
   }
   .smc-wrap .zone-header td,
   .smc-wrap .zone-subheader td {
-    padding: 4px 2px;
-    font-size: clamp(0.45rem, 2vw, 0.65rem);
+    padding: 3px 1px;
+    font-size: clamp(0.42rem, 1.6vw, 0.6rem);
     white-space: normal;
   }
 }
