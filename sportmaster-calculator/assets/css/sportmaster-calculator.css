@@ -547,8 +547,19 @@
     -webkit-overflow-scrolling: touch;
   }
   .smc-wrap .crack-table {
-    table-layout: auto;
+    table-layout: auto !important;
     min-width: 500px;
-    white-space: nowrap;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+  .smc-wrap .crack-table thead th {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+  .smc-wrap .crack-table tbody td {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
   }
 }
