@@ -450,26 +450,26 @@
   .smc-wrap .entry-dimensions-row { grid-template-columns: 1fr 1fr; }
   .smc-wrap .summary-grid { grid-template-columns: 1fr 1fr; }
 
-  /* Tables: keep horizontal layout, just shrink to fit */
+  /* Tables: keep horizontal layout, scale text to fit */
   .smc-wrap table {
-    font-size: 0.68rem;
-    table-layout: fixed;
+    font-size: clamp(0.5rem, 2.2vw, 0.75rem);
+    table-layout: auto;
     width: 100%;
+    white-space: nowrap;
   }
   .smc-wrap thead th {
-    padding: 5px 3px;
-    font-size: 0.6rem;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    padding: 4px 2px;
+    font-size: clamp(0.45rem, 2vw, 0.65rem);
+    white-space: nowrap;
   }
   .smc-wrap tbody td {
-    padding: 4px 3px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    padding: 3px 2px;
+    white-space: nowrap;
   }
   .smc-wrap .zone-header td,
   .smc-wrap .zone-subheader td {
-    padding: 5px 3px;
-    font-size: 0.65rem;
+    padding: 4px 2px;
+    font-size: clamp(0.45rem, 2vw, 0.65rem);
+    white-space: normal;
   }
 }
