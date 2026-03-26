@@ -1031,16 +1031,18 @@ function renderCourtEntries() {
                 <option value="sqm"${entry.areaInputMode === 'sqm' ? ' selected' : ''}>Square Meters</option>
               </select>
             </label>
+          </div>
+          <div class="form-row entry-dimensions-row">
             <label class="entry-wxl-field${entry.areaInputMode !== 'wxl' ? ' hidden' : ''}">
-              <span>Width (Feet)</span>
+              <span>Enter Width</span>
               <input class="entry-width input-highlight" type="number" min="0" step="0.1" value="${entry.width}" />
             </label>
             <label class="entry-wxl-field${entry.areaInputMode !== 'wxl' ? ' hidden' : ''}">
-              <span>Length (Feet)</span>
+              <span>Enter Length</span>
               <input class="entry-length input-highlight" type="number" min="0" step="0.1" value="${entry.length}" />
             </label>
             <label class="entry-direct-field${entry.areaInputMode === 'wxl' ? ' hidden' : ''}">
-              <span>${{sqft:'Square Feet',sqyd:'Square Yards',sqm:'Square Meters'}[entry.areaInputMode] || 'Area'}</span>
+              <span>${{sqft:'Enter Sq Ft',sqyd:'Enter Sq Yard',sqm:'Enter Sq Meter'}[entry.areaInputMode] || 'Enter Area'}</span>
               <input class="entry-area-value input-highlight" type="number" min="0" step="0.1" value="${entry.areaValue}" />
             </label>
           </div>

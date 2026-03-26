@@ -247,6 +247,9 @@
   flex-direction: column;
   gap: 12px;
 }
+.smc-wrap .entry-dimensions-row {
+  grid-template-columns: 1fr 1fr;
+}
 
 /* ── Court Preview ── */
 .smc-wrap .entry-preview {
