@@ -27,7 +27,7 @@
 }
 
 .smc-wrap .container {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 24px 16px 48px;
 }
@@ -238,17 +238,22 @@
 }
 .smc-wrap .entry-body {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 300px;
   gap: 24px;
   align-items: start;
+}
+.smc-wrap .court-entry-card {
+  overflow: hidden;
 }
 .smc-wrap .entry-fields {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 .smc-wrap .entry-dimensions-row {
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
+  min-width: 0;
 }
 
 /* ── Court Preview ── */
@@ -267,7 +272,7 @@
 }
 .smc-wrap .preview-svg {
   width: 100%;
-  max-width: 320px;
+  max-width: 300px;
 }
 .smc-wrap .court-svg {
   width: 100%;
@@ -402,6 +407,21 @@
   background: #fde8e8;
   color: #c0392b;
   border: 1px solid #e74c3c;
+}
+
+/* ── Medium screens — stack preview below fields ── */
+@media (max-width: 1000px) {
+  .smc-wrap .entry-body {
+    grid-template-columns: 1fr;
+  }
+  .smc-wrap .entry-preview {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .smc-wrap .preview-svg {
+    max-width: 260px;
+  }
 }
 
 /* ── Print Media ── */
