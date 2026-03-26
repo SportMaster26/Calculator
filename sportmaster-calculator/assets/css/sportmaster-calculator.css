@@ -225,6 +225,13 @@
   border-bottom: 2px solid var(--accent);
 }
 
+.smc-wrap .table-scroll-wrap {
+  width: 100%;
+}
+.smc-wrap .crack-table {
+  table-layout: auto;
+}
+
 /* ── Court Entry Cards ── */
 .smc-wrap .court-entry-card {
   background: #f8fafb;
@@ -533,5 +540,15 @@
     padding: 3px 1px;
     font-size: clamp(0.42rem, 1.6vw, 0.6rem);
     white-space: normal;
+  }
+  /* Crack filler table: too many columns for fixed layout, allow scroll */
+  .smc-wrap .table-scroll-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .smc-wrap .crack-table {
+    table-layout: auto;
+    min-width: 500px;
+    white-space: nowrap;
   }
 }

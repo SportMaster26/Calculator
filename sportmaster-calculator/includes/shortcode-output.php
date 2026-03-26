@@ -50,12 +50,14 @@
     <section class="card hidden" id="crackFillerSection" aria-label="Crack Filler">
       <h2>Crack Filler Estimates</h2>
       <p class="disclaimer">These coverage rates may vary depending on width as well as depth of the cracks.</p>
-      <table>
-        <thead>
-          <tr><th></th><th>Court</th><th>Product</th><th>Linear Ft /<br>Gallon</th><th>Recommended<br>Width</th><th>Gallons<br>Needed (Est.)</th><th>Packaging</th><th>Item<br>Number</th></tr>
-        </thead>
-        <tbody id="crackBody"></tbody>
-      </table>
+      <div class="table-scroll-wrap">
+        <table class="crack-table">
+          <thead>
+            <tr><th></th><th>Court</th><th>Product</th><th>Linear Ft /<br>Gallon</th><th>Recommended<br>Width</th><th>Gallons<br>Needed (Est.)</th><th>Packaging</th><th>Item<br>Number</th></tr>
+          </thead>
+          <tbody id="crackBody"></tbody>
+        </table>
+      </div>
     </section>
 
     <!-- Total Area Materials -->
