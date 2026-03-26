@@ -1021,7 +1021,7 @@ function renderCourtEntries() {
               <input class="entry-crack-feet" type="number" min="0" step="1" value="${entry.crackLinearFeet}" />
             </label>
           </div>
-          <div class="form-row">
+          <div class="form-row entry-dimensions-row">
             <label>
               <span>Area Input</span>
               <select class="entry-area-mode">
@@ -1031,8 +1031,6 @@ function renderCourtEntries() {
                 <option value="sqm"${entry.areaInputMode === 'sqm' ? ' selected' : ''}>Square Meters</option>
               </select>
             </label>
-          </div>
-          <div class="form-row entry-dimensions-row">
             <label class="entry-wxl-field${entry.areaInputMode !== 'wxl' ? ' hidden' : ''}">
               <span>Enter Width</span>
               <input class="entry-width input-highlight" type="number" min="0" step="0.1" value="${entry.width}" />
