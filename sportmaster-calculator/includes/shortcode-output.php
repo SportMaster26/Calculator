@@ -1,0 +1,149 @@
+<?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
+<div id="sportmaster-calculator-wrap" class="smc-wrap">
+  <div class="container">
+    <header>
+      <p id="noteText"></p>
+    </header>
+
+    <!-- Step 1: Surface -->
+    <section class="card" aria-label="Surface">
+      <h2>Step 1: Surface</h2>
+      <div class="form-row">
+        <label>
+          <span>Surface / Base Type</span>
+          <select id="surfaceType">
+            <option value="concrete">New Concrete</option>
+            <option value="asphalt">New Asphalt</option>
+            <option value="existingConcrete">Existing Concrete</option>
+            <option value="existingAsphalt">Existing Asphalt</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- Step 2: Court Entries -->
+    <section class="card" aria-label="Court Entries">
+      <h2>Step 2: Add Courts</h2>
+      <p class="step-hint">Add court types, set dimensions, and choose zone colors.</p>
+      <div id="courtEntriesContainer"></div>
+      <button id="addCourtBtn" class="btn-add">+ Add Court</button>
+    </section>
+
+    <!-- Project Summary -->
+    <section class="card" aria-label="Summary">
+      <h2>Project Summary</h2>
+      <div id="summaryGrid" class="summary-grid"></div>
+    </section>
+
+    <!-- Zone Area Breakdown -->
+    <section class="card" aria-label="Zone Areas">
+      <h2>Zone Area Breakdown</h2>
+      <table>
+        <thead>
+          <tr><th>Court</th><th>Zone</th><th>Square<br>Feet</th><th>Square<br>Yards</th></tr>
+        </thead>
+        <tbody id="zoneAreasBody"></tbody>
+      </table>
+    </section>
+
+    <!-- Crack Filler -->
+    <section class="card hidden" id="crackFillerSection" aria-label="Crack Filler">
+      <h2>Crack Filler Estimates</h2>
+      <p class="disclaimer">These coverage rates may vary depending on width as well as depth of the cracks.</p>
+      <div class="table-scroll-wrap">
+        <table class="crack-table">
+          <thead>
+            <tr><th></th><th>Court</th><th>Product</th><th>Linear Ft /<br>Gallon</th><th>Recommended<br>Width</th><th>Gallons<br>Needed (Est.)</th><th>Packaging</th><th>Item<br>Number</th></tr>
+          </thead>
+          <tbody id="crackBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Total Area Materials -->
+    <section class="card" aria-label="Total Area Materials">
+      <h2>Total Area Materials (Resurfacer)</h2>
+      <table>
+        <thead>
+          <tr><th>Material</th><th>Coats</th><th>Gallons<br>Needed</th><th>Packaging</th><th>Item<br>Number</th></tr>
+        </thead>
+        <tbody id="totalAreaBody"></tbody>
+      </table>
+    </section>
+
+    <!-- Zone Product Options -->
+    <section class="card" aria-label="Zone Products">
+      <h2>Court Zone Product Options</h2>
+      <table>
+        <thead>
+          <tr><th>Material</th><th>Coats</th><th>Gallons<br>Needed</th><th>Packaging</th><th>Item<br>Number</th></tr>
+        </thead>
+        <tbody id="zoneProductsBody"></tbody>
+      </table>
+    </section>
+
+    <!-- ProCushion -->
+    <section class="card hidden" id="proCushionSection" aria-label="ProCushion">
+      <h2>ProCushion Layers</h2>
+      <table>
+        <thead>
+          <tr><th>Material</th><th>Coats</th><th>Gallons<br>Needed</th><th>Packaging</th><th>Item<br>Number</th></tr>
+        </thead>
+        <tbody id="cushionBody"></tbody>
+      </table>
+    </section>
+
+    <!-- Striping -->
+    <section class="card" aria-label="Striping">
+      <h2>Striping</h2>
+      <table>
+        <thead>
+          <tr><th>Material</th><th>Gallons<br>Needed</th><th>Packaging</th><th>Item<br>Number</th></tr>
+        </thead>
+        <tbody id="stripingBody"></tbody>
+      </table>
+    </section>
+
+    <!-- Print / Download Button -->
+    <section class="card no-print" aria-label="Print">
+      <button id="printMaterialsBtn" class="btn-print">Download PDF / Print Materials List</button>
+    </section>
+
+    <!-- Send to Representative -->
+    <section class="card no-print" aria-label="Send to Representative">
+      <h2>Send to Representative</h2>
+      <p class="step-hint">Select your location and enter your contact info to send the materials list to your local rep.</p>
+
+      <div class="form-row">
+        <label>
+          <span>City</span>
+          <input type="text" id="repCity" placeholder="City" />
+        </label>
+        <label>
+          <span>State</span>
+          <select id="repState">
+            <option value="">— Select State —</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="form-row" style="margin-top: 14px;">
+        <label>
+          <span>Your Name</span>
+          <input type="text" id="senderName" placeholder="Full Name" />
+        </label>
+        <label>
+          <span>Your Email</span>
+          <input type="email" id="senderEmail" placeholder="email@example.com" />
+        </label>
+        <label>
+          <span>Your Phone</span>
+          <input type="tel" id="senderPhone" placeholder="(555) 123-4567" />
+        </label>
+      </div>
+
+      <button id="sendToRepBtn" class="btn-send" disabled>Send to Representative</button>
+      <div id="sendStatus" class="send-status hidden"></div>
+    </section>
+  </div>
+</div>
