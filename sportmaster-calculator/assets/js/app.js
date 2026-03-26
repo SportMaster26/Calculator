@@ -509,6 +509,13 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
           const concOnly = { drums: mixed.drums, kegs: mixed.kegs, pails: 0 };
           const sandLbs = calcMixedSandLbs(concOnly, getColorSandLbs);
           productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
+          if (sandLbs > 0) {
+            const sandBags = Math.ceil(sandLbs / 50);
+            zoneResult.products.push({
+              product: 'Color Sand (80-90 Mesh)', coats: '', gallons: sandLbs + ' lbs',
+              packaging: sandBags + ' - 50 lbs. Bags', item: 'R1010'
+            });
+          }
         }
 
         // ColorPlus: gallon color for drums/kegs, 1 jar per pail for Ready Mix
@@ -552,6 +559,13 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         if (prodName === 'Neutral Concentrate') {
           const sandLbs = calcMixedSandLbs(mixed, getColorSandLbs);
           productTotalSandLbs[prodName] = (productTotalSandLbs[prodName] || 0) + sandLbs;
+          if (sandLbs > 0) {
+            const sandBags = Math.ceil(sandLbs / 50);
+            zoneResult.products.push({
+              product: 'Color Sand (80-90 Mesh)', coats: '', gallons: sandLbs + ' lbs',
+              packaging: sandBags + ' - 50 lbs. Bags', item: 'R1010'
+            });
+          }
         }
 
         // ColorPlus per zone — based on this zone's mixed packaging
