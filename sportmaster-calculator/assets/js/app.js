@@ -608,6 +608,19 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
         });
       }
     }
+  } else {
+    // Pails — still need to show sand for concentrate
+    for (const [prodName, sandLbs] of Object.entries(productTotalSandLbs)) {
+      if (sandLbs > 0) {
+        const sandBags = Math.ceil(sandLbs / 50);
+        zoneTotalPackaging.push({
+          product: 'Color Sand (80-90 Mesh)',
+          gallons: sandLbs + ' lbs',
+          packaging: sandBags + ' - 50 lbs. Bags',
+          item: 'R1010'
+        });
+      }
+    }
   }
   // Color totals
   for (const [colorName, ct] of Object.entries(colorTotals)) {
