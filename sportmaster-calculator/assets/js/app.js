@@ -383,40 +383,59 @@ function getColorPlusItemNumber(colorName, isJar) {
 
 // ── Compute zone areas ──
 // Determine which zone indices should be hidden based on court type and per-court area
-function getHiddenZoneIndices(courtType, singleCourtSqFt) {
+function getHiddenZoneIndices(courtType, totalSqFt, zoneColors) {
   const hidden = [];
   const def = courtDefs[courtType];
-  if (courtType === 'pickleball' && singleCourtSqFt <= 880) {
+  if (courtType === 'pickleball' && totalSqFt <= 880) {
     // Hide "Total Area" zone when pickleball court is 20x44 or smaller
     def.zones.forEach((z, i) => { if (z.name === 'Total Area') hidden.push(i); });
   }
-  if (courtType === 'tennis' && singleCourtSqFt <= 2808) {
+  if (courtType === 'tennis' && totalSqFt <= 2808) {
     // Hide "Outside Area" when court has no space beyond the 2808 sq ft playing area
     def.zones.forEach((z, i) => { if (z.name === 'Outside Area') hidden.push(i); });
+  }
+  // Pickleball: hide zones whose color matches the outside area (zone 0) color
+  if (courtType === 'pickleball' && zoneColors) {
+    const outsideColor = zoneColors[0];
+    if (outsideColor && outsideColor !== 'Not Selected') {
+      def.zones.forEach((z, i) => {
+        if (i > 0 && !hidden.includes(i) && zoneColors[i] === outsideColor) {
+          hidden.push(i);
+        }
+      });
+    }
+  }
+  // Basketball: hide zones (from Three Point onwards) whose color matches the Border (zone 1) color
+  if ((courtType === 'basketballFull' || courtType === 'basketballHalf') && zoneColors) {
+    const borderColor = zoneColors[1];
+    if (borderColor && borderColor !== 'Not Selected') {
+      def.zones.forEach((z, i) => {
+        if (i >= 2 && !hidden.includes(i) && zoneColors[i] === borderColor) {
+          hidden.push(i);
+        }
+      });
+    }
   }
   return hidden;
 }
 
-function computeZoneAreas(courtType, totalSqFt, numCourts, singleCourtSqFt) {
+function computeZoneAreas(courtType, totalSqFt, numCourts, zoneColors) {
   const def = courtDefs[courtType];
-  const hidden = getHiddenZoneIndices(courtType, singleCourtSqFt || (totalSqFt / (numCourts || 1)));
+  const hidden = getHiddenZoneIndices(courtType, totalSqFt, zoneColors);
   const zones = [];
   for (let i = 0; i < def.zones.length; i++) {
     if (hidden.includes(i)) continue;
     const zone = def.zones[i];
     let areaSqFt;
     if (zone.sqftPerCourt !== null) {
-      areaSqFt = Math.ceil(zone.sqftPerCourt * numCourts);
+      areaSqFt = Math.ceil(zone.sqftPerCourt);
     } else {
       if (courtType === 'tennis') {
-        const playingArea = 2808 * numCourts;
-        areaSqFt = Math.max(0, totalSqFt - playingArea);
+        areaSqFt = Math.max(0, totalSqFt - 2808);
       } else if (courtType === 'basketballFull') {
-        const courtArea = 4200 * numCourts;
-        areaSqFt = Math.max(0, totalSqFt - courtArea);
+        areaSqFt = Math.max(0, totalSqFt - 4200);
       } else if (courtType === 'basketballHalf') {
-        const courtArea = 2100 * numCourts;
-        areaSqFt = Math.max(0, totalSqFt - courtArea);
+        areaSqFt = Math.max(0, totalSqFt - 2100);
       } else {
         areaSqFt = totalSqFt;
       }
@@ -431,8 +450,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
   const totalSqFt = getEntrySqFt(entry);
   const totalSqYd = totalSqFt / SQFT_PER_SQYD;
   const pkgSize = getPackageSize(packaging);
-  const singleCourtSqFt = totalSqFt / (entry.numCourts || 1);
-  const zoneAreas = computeZoneAreas(entry.courtType, totalSqFt, entry.numCourts, singleCourtSqFt);
+  const zoneAreas = computeZoneAreas(entry.courtType, totalSqFt, entry.numCourts, entry.zoneColors);
 
   // ── First pass: compute raw gallons per zone per product and aggregate totals ──
   const zoneRawData = [];
@@ -931,7 +949,6 @@ function readEntryFromDOM(entry) {
 }
 
 // Convert entry dimensions to total square feet regardless of input mode
-// Dimensions represent a single court; multiply by numCourts for total area
 function getEntrySqFt(entry) {
   let singleCourtSqFt = 0;
   if (entry.areaInputMode === 'wxl') {
@@ -943,7 +960,7 @@ function getEntrySqFt(entry) {
   } else if (entry.areaInputMode === 'sqm') {
     singleCourtSqFt = entry.areaValue * SQFT_PER_SQM;
   }
-  return singleCourtSqFt * (entry.numCourts || 1);
+  return singleCourtSqFt;
 }
 
 // Return total area in the user's selected unit for display
@@ -985,8 +1002,7 @@ function renderCourtEntries() {
     const showCourtsField = entry.courtType !== 'totalArea';
 
     const entrySqFt = getEntrySqFt(entry);
-    const singleCourtSqFt = entrySqFt / (entry.numCourts || 1);
-    const hiddenZones = getHiddenZoneIndices(entry.courtType, singleCourtSqFt);
+    const hiddenZones = getHiddenZoneIndices(entry.courtType, entrySqFt, entry.zoneColors);
 
     let zoneColorsHtml = def.zones.map((zone, i) => {
       const isHidden = hiddenZones.includes(i);
@@ -1111,8 +1127,8 @@ function renderCourtEntries() {
     const onFieldChange = () => {
       readEntryFromDOM(entry);
       // Toggle zone color dropdowns visibility based on dimensions
-      const newSqFt = getEntrySqFt(entry) / (entry.numCourts || 1);
-      const newHidden = getHiddenZoneIndices(entry.courtType, newSqFt);
+      const newSqFt = getEntrySqFt(entry);
+      const newHidden = getHiddenZoneIndices(entry.courtType, newSqFt, entry.zoneColors);
       card.querySelectorAll('.zone-color-label').forEach(label => {
         const zi = parseInt(label.dataset.zoneLabel, 10);
         const shouldHide = newHidden.includes(zi);
