@@ -394,41 +394,41 @@ function getHiddenZoneIndices(courtType, totalSqFt) {
   return hidden;
 }
 
-// Chain-reaction: each zone compares to the last visible zone before it.
-// If colors match, the zone is hidden from the results table (not the UI).
-// Basketball skips Border (zone 1) in the chain.
+// Color matching: hides zones from the results table (not the UI).
+// Pickleball: any zone matching Total Area (zone 0) color is hidden.
+// Basketball: chain from Court (zone 0), skipping Border (zone 1).
+//   Center Court Circle always compares to Court, not the chain.
 function getColorMatchedZoneIndices(courtType, zoneColors) {
   const matched = [];
   if (!zoneColors) return matched;
   const def = courtDefs[courtType];
 
-  // Pickleball chain: Total Area → Service Area → Kitchen Area
+  // Pickleball: hide any zone whose color matches Total Area (zone 0)
   if (courtType === 'pickleball') {
-    let activeColor = zoneColors[0];
-    for (let i = 1; i < def.zones.length; i++) {
-      const color = zoneColors[i];
-      if (!activeColor || activeColor === 'Not Selected' || !color || color === 'Not Selected') {
-        activeColor = color;
-        continue;
-      }
-      if (color === activeColor) {
-        matched.push(i);
-      } else {
-        activeColor = color;
+    const outsideColor = zoneColors[0];
+    if (outsideColor && outsideColor !== 'Not Selected') {
+      for (let i = 1; i < def.zones.length; i++) {
+        if (zoneColors[i] === outsideColor) matched.push(i);
       }
     }
   }
 
-  // Basketball chain: Court → (skip Border) → Three Point → Key → Free Throw → Center Court
+  // Basketball chain: Court → (skip Border) → Three Point → Key → Free Throw
+  // Center Court Circle compares to Court directly
   if (courtType === 'basketballFull' || courtType === 'basketballHalf') {
-    let activeColor = zoneColors[0]; // start with Court color
+    const courtColor = zoneColors[0];
+    let activeColor = courtColor; // start with Court color
+    const lastZone = def.zones.length - 1;
     for (let i = 2; i < def.zones.length; i++) { // skip Border (zone 1)
       const color = zoneColors[i];
       if (!activeColor || activeColor === 'Not Selected' || !color || color === 'Not Selected') {
         activeColor = color;
         continue;
       }
-      if (color === activeColor) {
+      // Center Court Circle (last zone on full court) compares to Court color
+      if (courtType === 'basketballFull' && i === lastZone) {
+        if (color === courtColor) matched.push(i);
+      } else if (color === activeColor) {
         matched.push(i);
       } else {
         activeColor = color;
