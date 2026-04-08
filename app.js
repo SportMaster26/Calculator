@@ -420,9 +420,9 @@ function getColorMatchedZoneIndices(courtType, zoneColors) {
   return matched;
 }
 
-function computeZoneAreas(courtType, totalSqFt, numCourts, zoneColors, singleCourtSqFt) {
+function computeZoneAreas(courtType, totalSqFt, numCourts, zoneColors) {
   const def = courtDefs[courtType];
-  const hidden = getHiddenZoneIndices(courtType, singleCourtSqFt || (totalSqFt / (numCourts || 1)));
+  const hidden = getHiddenZoneIndices(courtType, totalSqFt);
   const colorMatched = getColorMatchedZoneIndices(courtType, zoneColors);
   const skip = [...hidden, ...colorMatched];
   const zones = [];
@@ -456,8 +456,7 @@ function calculateEntry(entry, surfaceType, packaging, mixType) {
   const totalSqFt = getEntrySqFt(entry);
   const totalSqYd = totalSqFt / SQFT_PER_SQYD;
   const pkgSize = getPackageSize(packaging);
-  const singleCourtSqFt = totalSqFt / (entry.numCourts || 1);
-  const zoneAreas = computeZoneAreas(entry.courtType, totalSqFt, entry.numCourts, entry.zoneColors, singleCourtSqFt);
+  const zoneAreas = computeZoneAreas(entry.courtType, totalSqFt, entry.numCourts, entry.zoneColors);
 
   // ── First pass: compute raw gallons per zone per product and aggregate totals ──
   const zoneRawData = [];
@@ -954,7 +953,7 @@ function getEntrySqFt(entry) {
   } else if (entry.areaInputMode === 'sqm') {
     singleCourtSqFt = entry.areaValue * SQFT_PER_SQM;
   }
-  return singleCourtSqFt * (entry.numCourts || 1);
+  return singleCourtSqFt;
 }
 
 // Return total area in the user's selected unit for display
@@ -996,8 +995,7 @@ function renderCourtEntries() {
     const showCourtsField = entry.courtType !== 'totalArea';
 
     const entrySqFt = getEntrySqFt(entry);
-    const singleCourtSqFt = entrySqFt / (entry.numCourts || 1);
-    const hiddenZones = getHiddenZoneIndices(entry.courtType, singleCourtSqFt);
+    const hiddenZones = getHiddenZoneIndices(entry.courtType, entrySqFt);
 
     let zoneColorsHtml = def.zones.map((zone, i) => {
       const isHidden = hiddenZones.includes(i);
@@ -1123,7 +1121,7 @@ function renderCourtEntries() {
       readEntryFromDOM(entry);
       // Toggle zone color dropdowns visibility based on dimensions
       const newSqFt = getEntrySqFt(entry);
-      const newHidden = getHiddenZoneIndices(entry.courtType, newSqFt / (entry.numCourts || 1));
+      const newHidden = getHiddenZoneIndices(entry.courtType, newSqFt);
       card.querySelectorAll('.zone-color-label').forEach(label => {
         const zi = parseInt(label.dataset.zoneLabel, 10);
         const shouldHide = newHidden.includes(zi);
